@@ -9,12 +9,12 @@ export interface IUserInsertArgs {
 }
 
 export enum UserRepositoryErrorCode {
-  UniqueViolation = 'UniqueViolation',
-  Other = 'Other',
+  UniqueViolation = 'UniqueViolationError',
+  Unknown = 'UnknownError',
 }
 
 export interface IUserRepositoryError extends Error {
-  type: UserRepositoryErrorCode;
+  code: UserRepositoryErrorCode;
 }
 
 

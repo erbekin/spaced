@@ -41,7 +41,6 @@ export class AppError<M = any, C extends ErrCode<M> = ErrCode<M>> extends Error 
   }
 
   toJSON(): {
-    name: string;
     module: string;
     code: C;
     message: string;
@@ -50,11 +49,10 @@ export class AppError<M = any, C extends ErrCode<M> = ErrCode<M>> extends Error 
     cause?: unknown;
   } {
     return {
-      name: this.name,
+      status: this.status,
+      message: this.message,
       module: this.module,
       code: this.code,
-      message: this.message,
-      status: this.status,
       payload: this.payload,
       ...(isDevelopment() ? { cause: serializeCause(this.cause) } : {}),
     };

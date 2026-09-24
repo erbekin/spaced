@@ -1,11 +1,17 @@
+import ms from "ms";
+
 // Create the shutdown function
 export async function shutdown(server, signal) {
   console.log(`🔴 ${signal} received. Starting graceful shutdown...`);
-
+  const now = Date.now();
   // 1. Stop accepting new connections
-  server.close(async () => {
-    console.log('🔚 HTTP server closed.');
-
+  setTimeout(() => {
+    console.error('🔴 Shutdown timed out. Forcing exit.');
+    process.exit(1);
+  }, 10000); // 10-second timeout
+  await server.close(async () => {
+    const elapsed = ms(Date.now() - now, { long: true });
+    console.log(`🔚 HTTP server closed in ${elapsed}`);
     try {
       // 2. Clean up external resources (e.g., database, Redis)
       // await db.disconnect();
@@ -18,8 +24,5 @@ export async function shutdown(server, signal) {
   });
 
   // 3. Force shutdown if draining takes too long
-  setTimeout(() => {
-    console.error('🔴 Shutdown timed out. Forcing exit.');
-    process.exit(1);
-  }, 10000); // 10-second timeout
+
 }

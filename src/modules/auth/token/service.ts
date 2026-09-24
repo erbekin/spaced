@@ -3,22 +3,22 @@ import { TokenError } from "./errors";
 import jwtlib from "jsonwebtoken";
 
 export enum TokenType {
-  ACCESS = "AccessToken",
-  REFRESH = "RefreshToken",
+  Access = "AccessToken",
+  Refresh = "RefreshToken",
 }
 
 export interface AccessTokenConfig {
-  type: TokenType.ACCESS;
+  type: TokenType.Access;
   userId: string;
   username: string;
 }
 
 export interface RefreshTokenConfig {
-  type: TokenType.REFRESH;
+  type: TokenType.Refresh;
   sessionId: string;
 }
 
-export type TokenConfig<T extends TokenType> = T extends TokenType.ACCESS ? AccessTokenConfig : RefreshTokenConfig;
+export type TokenConfig<T extends TokenType> = T extends TokenType.Access ? AccessTokenConfig : RefreshTokenConfig;
 
 export interface ITokenService {
   create<T extends TokenType>(config: TokenConfig<T>): ResultAsync<string, TokenError>;
@@ -41,6 +41,7 @@ export class TokenService implements ITokenService {
             {
               algorithm: "HS256",
               expiresIn: Bun.env.JWT_ACCESS_TOKEN_EXPIRY,
+              subject: config.userId
             },
             (err, token) => {
               if (err || !token) reject(TokenError.create('OTHER', {cause: err}));
@@ -66,9 +67,10 @@ export class TokenService implements ITokenService {
             },
             (error, decoded) => {
               if (error === null) {
+                console.log("decoded",decoded)
                 const payload = decoded as jwtlib.JwtPayload;
                 if (!payload.sub || !payload.username) return reject(TokenError.create('INVALID_FORMAT', {message: "'sub' or 'username' missing in jwt payload"}));
-                resolve({ type: TokenType.ACCESS, userId: payload.sub, username: payload.username });
+                resolve({ type: TokenType.Access, userId: payload.sub, username: payload.username });
               } else if (error instanceof jwtlib.TokenExpiredError) {
                 return reject(TokenError.create('EXPIRED', {cause: error, message: error.message, payload: {expiredAt: error.expiredAt}}));
               } else if (error instanceof jwtlib.JsonWebTokenError) {
@@ -122,7 +124,7 @@ export class TokenService implements ITokenService {
               if (error === null) {
                 const payload = decoded as jwtlib.JwtPayload;
                 if (!payload.jti) return reject(TokenError.create('INVALID_FORMAT', {message: "'jti' missing in jwt payload"}));
-                resolve({ type: TokenType.REFRESH, sessionId: payload.jti });
+                resolve({ type: TokenType.Refresh, sessionId: payload.jti });
               } else if (error instanceof jwtlib.TokenExpiredError) {
                 return reject(TokenError.create('EXPIRED', {cause: error, message: error.message, payload: {expiredAt: error.expiredAt}}));
               } else if (error instanceof jwtlib.JsonWebTokenError) {
@@ -142,21 +144,21 @@ export class TokenService implements ITokenService {
   //========= common interface implementation ==========
   create<T extends TokenType>(config: TokenConfig<T>): ResultAsync<string, TokenError> {
     switch (config.type) {
-      case TokenType.ACCESS:
+      case TokenType.Access:
         return this.accessToken.create(config);
-      case TokenType.REFRESH:
+      case TokenType.Refresh:
         return this.refreshToken.create(config);
     }
   }
 
   // helping type inference
-  verify(type: TokenType.ACCESS, token: string): ResultAsync<AccessTokenConfig, TokenError>;
-  verify(type: TokenType.REFRESH, token: string): ResultAsync<RefreshTokenConfig, TokenError>;
+  verify(type: TokenType.Access, token: string): ResultAsync<AccessTokenConfig, TokenError>;
+  verify(type: TokenType.Refresh, token: string): ResultAsync<RefreshTokenConfig, TokenError>;
   verify<T extends TokenType>(type: T, token: string): ResultAsync<TokenConfig<T>, TokenError> {
     switch (type) {
-      case TokenType.ACCESS:
+      case TokenType.Access:
         return this.accessToken.verify(token) as ResultAsync<TokenConfig<T>, TokenError>;
-      case TokenType.REFRESH:
+      case TokenType.Refresh:
         return this.refreshToken.verify(token) as ResultAsync<TokenConfig<T>, TokenError>;
     }
   }

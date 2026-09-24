@@ -1,6 +1,6 @@
 import type { Handler } from "express";
 import { Maybe } from "purify-ts";
-import { AccessToken, type AccessTokenConfig } from "../../../lib/jwt";
+import { TokenType, type ITokenService, type TokenConfig } from "../token/service";
 
 declare global {
   namespace Express {
@@ -8,12 +8,12 @@ declare global {
       /**
        * The decoded access token, if one was provided and is valid.
        */
-      accessToken: AccessTokenConfig | undefined
+      accessToken: TokenConfig<TokenType.Access> | undefined
     }
   }
 }
 
-export const AccessTokenAuth = (): Handler => async (req, res, next) => {
+export const AccessTokenAuthMiddleware = (tokenService: ITokenService): Handler => async (req, res, next) => {
   // Extract token string from authorization header, empty string if not present
   const token = Maybe.fromNullable(req.headers.authorization).caseOf({
     Nothing: () => "",
@@ -32,9 +32,9 @@ export const AccessTokenAuth = (): Handler => async (req, res, next) => {
   // verify token.
   // invalid -> 401
   // valid -> set token on locals and call next
-  (await AccessToken.verify(token))
-    .mapErr((_) => {
-      res.status(401).json({ message: "Invalid token" });
+  (await tokenService.verify(TokenType.Access, token))
+    .mapErr((error) => {
+      res.status(error.status).json(error.toJSON());
     })
     .map((token) => {
       res.locals.accessToken = token;

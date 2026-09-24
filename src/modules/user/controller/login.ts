@@ -2,13 +2,19 @@ import type { Handler } from "express";
 import z from "zod";
 import { config } from "../../config";
 import type { ISessionService } from "../../auth/session/service";
-import { RefreshToken } from "../../../lib/jwt";
 import type { IUserService } from "../service";
+import { defineErrors, withPayload } from "../../../lib/api-error";
 
 const loginSchema = z.object({
   username: z.string(),
   password: z.string().min(3).max(255),
 });
+
+const LoginError = defineErrors('user::login', {
+  INVALID_REFRESH_TOKEN: { status: 400, message: 'Invalid or missing refresh token' },
+  SESSION_FOUND: withPayload<{ sessionId: string }>({ status: 400, message: 'Session found, clear the cookie and try again' }),
+  INVALID_BODY: withPayload<{ issues: z.core.$ZodIssue[] }>({ status: 400, message: 'Invalid request body, expected username and password' }),
+})
 
 /**
  * If user is already logged in, return an error.
@@ -28,14 +34,16 @@ export const AlreadyLoggedInMiddleware = (
   }
   const refreshToken = req.cookies.refreshToken;
   if (typeof refreshToken !== 'string') {
-    return res.status(400).json({error: {message: 'Invalid refresh token'}});
+    const error = LoginError.create('INVALID_REFRESH_TOKEN');
+    return res.status(error.status).json(error);
   }
-  sessionService.decodeSession(refreshToken)
+  sessionService.decode(refreshToken)
     .match((session) => {
-      return res.status(400).json({error: {message: 'Already logged in', sessionId: session.sessionId}});
+      const error = LoginError.create('SESSION_FOUND', { payload: { sessionId: session.sessionId } });
+      return res.status(error.status).json(error);
     }, (error) => {
       if (error.code !== 'NOT_FOUND') {
-        return res.status(error.status ?? 500).json({error});
+        return res.status(error.status).json(error.toJSON());
       }
       next();
     });
@@ -46,19 +54,20 @@ export const LoginUserController = (
 ): Handler => (req, res) => {
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({error: {message: 'Invalid request body', issues: result.error.issues}});
+    const error = LoginError.create('INVALID_BODY', { payload: { issues: result.error.issues } });
+    return res.status(error.status).json(error);
   }
   const { username, password } = result.data;
   userService.login({ username, password })
-    .match((user) => {
-      res.cookie('refreshToken', user.refreshToken, {
+    .match(({tokens, user}) => {
+      res.cookie('refreshToken', tokens.refreshToken, {
         sameSite: true,
         secure: Bun.env.NODE_ENV === 'production',
         httpOnly: true,
         maxAge: config.jwt.refreshToken.expiration,
       });
-      return res.status(200).json(user);
+      return res.status(200).json({tokens, user});
     }, (error) => {
-      return res.status(error.status ?? 500).json({error});
+      return res.status(error.status).json(error.toJSON());
     })
 };

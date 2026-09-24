@@ -61,63 +61,44 @@ export function handleKnownRequestError(
   }
 }
 
-
-/**
- * Passed to the error mapper for every failure.
- * - `caught` is set when the error is a `PrismaClientKnownRequestError` whose code matched `code`.
- * - `uncaught` is set otherwise — this includes plain errors *and* a `PrismaClientKnownRequestError`
- *   whose code did **not** match (so `uncaught` can still be a Prisma error; check its `.code` if needed).
- * Exactly one of the two is ever set.
- */
-export interface CaughtInfo {
-  caught: PrismaClientKnownRequestError | undefined;
-  uncaught: unknown | undefined;
-}
+export type CaughtInfo =
+  | { status: 'caught-known'; error: PrismaClientKnownRequestError }
+  | { status: 'uncaught-known'; error: PrismaClientKnownRequestError }
+  | { status: 'uncaught-unknown'; error: unknown };
 
 const classify = (code: PrismaErrorCode, e: unknown): CaughtInfo =>
   e instanceof PrismaClientKnownRequestError && codeMatches(code, e.code)
-    ? { caught: e, uncaught: undefined }
-    : { caught: undefined, uncaught: e };
+    ? { status: 'caught-known', error: e }
+    : e instanceof PrismaClientKnownRequestError
+      ? { status: 'uncaught-known', error: e }
+      : { status: 'uncaught-unknown', error: e };
 
 /**
- * Like `handleKnownRequestError`, but never throws: it returns a neverthrow `Result`/`ResultAsync`
- * instead, and `errorMapper` is invoked for *every* failure (not just matching-code ones), receiving
- * a `CaughtInfo` so it can tell caught apart from uncaught.
+ * Prisma sorgusunu veya fonksiyonu çalıştırır; sonucu `Result<T, CaughtInfo>`
+ * veya `ResultAsync<T, CaughtInfo>` içine sarar.
  *
- * - On success, `ok(f())` is returned.
- * - On any thrown/rejected error, `err(errorMapper(info))` is returned.
- *
- * The return type follows `f`:
- * - `f` returns a promise (an `async` function or a Prisma query): a `ResultAsync<T, E>` is returned.
- * - `f` returns a plain value: a plain `Result<T, E>` is returned.
- *
- * @param code Code to treat as `caught`, or an array of codes, e.g. `'P2025'`.
- * @param f Function to call.
- * @param errorMapper Maps every failure to the error type `E`.
+ * @param code 'caught-known' olarak sınıflandırılacak Prisma hata kodu veya kod listesi (örn: 'P2002', 'P2025').
+ * @param f Çalıştırılacak fonksiyon veya Prisma sorgusu.
  */
-export function handleKnownRequestErrorRes<T, E>(
+export function handleKnownRequestErrorRes<T>(
   code: PrismaErrorCode,
   f: () => Promise<T>,
-  errorMapper: (info: CaughtInfo) => E,
-): ResultAsync<T, E>;
-export function handleKnownRequestErrorRes<T, E>(
+): ResultAsync<T, CaughtInfo>;
+export function handleKnownRequestErrorRes<T>(
   code: PrismaErrorCode,
   f: () => T,
-  errorMapper: (info: CaughtInfo) => E,
-): Result<T, E>;
+): Result<T, CaughtInfo>;
 export function handleKnownRequestErrorRes(
   code: PrismaErrorCode,
   f: () => unknown,
-  errorMapper: (info: CaughtInfo) => unknown,
 ): unknown {
-  const handle = (e: unknown) => err(errorMapper(classify(code, e)));
+  const handle = (e: unknown) => err(classify(code, e));
 
   try {
     const result = f();
 
     if (isThenable(result)) {
-      // Prisma queries are lazy thenables: nothing runs until `.then` is called, and they are not
-      // guaranteed to be `instanceof Promise`. `Promise.resolve` adopts them and starts the query.
+      // Prisma lazy thenable yapılarını standart Promise zincirine alır
       const settled = Promise.resolve(result).then(
         (value) => ok(value),
         (e) => handle(e),
@@ -127,7 +108,6 @@ export function handleKnownRequestErrorRes(
 
     return ok(result);
   } catch (e) {
-    // `f` threw synchronously
     return handle(e);
   }
 }

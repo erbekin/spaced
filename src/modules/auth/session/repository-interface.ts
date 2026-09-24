@@ -1,3 +1,4 @@
+import { ResultAsync } from "neverthrow";
 import {type SessionEntity } from "./service";
 
 
@@ -7,7 +8,7 @@ import {type SessionEntity } from "./service";
  * The same is true for `createdAt`, which will be set to the current timestamp if not provided.
  */
 export interface ISessionInsertArgs {
-  id?: string;
+  sessionId?: string;
   userId: string;
   userAgent: string | null;
   ipAddress: string | null;
@@ -15,10 +16,20 @@ export interface ISessionInsertArgs {
   createdAt?: Date;
 }
 
+export type SessionRepositoryErrorCode =
+  | "ReferenceError"
+  | "NotFoundError"
+  | "UnknownError";
+
+export interface ISessionRepositoryError extends Error {
+  code: SessionRepositoryErrorCode;
+}
 /** Persistence port. These promises may reject (driver errors, timeouts, ...). */
 export interface ISessionRepository {
-  insert(session: ISessionInsertArgs): Promise<SessionEntity>;
-  findById(sessionId: string): Promise<SessionEntity | null>;
+  insert(session: ISessionInsertArgs): ResultAsync<SessionEntity, ISessionRepositoryError>;
+  findById(sessionId: string): ResultAsync<SessionEntity | null, ISessionRepositoryError>;
   /** @return null if session not found, i.e. delete *0 or 1* session  */
-  tryDeleteById(sessionId: string): Promise<SessionEntity | null>;
+  tryDeleteById(sessionId: string): ResultAsync<SessionEntity | null, ISessionRepositoryError>;
+  /** Deletes the old session and inserts a new one, returning the new session, atomically. */
+  deleteAndInsert(oldSessionId: string, newSession: ISessionInsertArgs): ResultAsync<SessionEntity, ISessionRepositoryError>;
 }

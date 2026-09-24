@@ -9,12 +9,20 @@ import { ListUsersController } from "./controller/list";
 import { LoginUserController, AlreadyLoggedInMiddleware } from "./controller/login";
 import { MeUserController } from "./controller/me";
 import { TokenService } from "../auth/token/service";
+import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth";
 
 
 
 const tokenService = new TokenService();
 const sessionService = new SessionService(PrismaSessionRepository, tokenService);
-const userService = new UserService(sessionService, PrismaUserRepository, BunPasswordHasher.getInstance());
+
+const userService =
+  new UserService(
+    sessionService,
+    PrismaUserRepository,
+    BunPasswordHasher.getInstance(),
+    tokenService,
+  );
 
 export function createRouter(base: string): Router {
   const router = Router();
@@ -30,7 +38,9 @@ export function createRouter(base: string): Router {
 
   router.post('/login', AlreadyLoggedInMiddleware(sessionService), LoginUserController(userService))
 
-  router.get('/me', MeUserController(sessionService, userService))
+  const accessTokenAuthMiddleware = AccessTokenAuthMiddleware(tokenService);
+
+  router.get('/me', accessTokenAuthMiddleware, MeUserController(userService))
   return router;
 }
 

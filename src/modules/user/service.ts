@@ -1,10 +1,10 @@
-import { errAsync, ok, okAsync, ResultAsync } from "neverthrow";
+import { errAsync, ok, okAsync, ResultAsync, safeTry } from "neverthrow";
 import { UserError } from "./errors";
-import { RefreshToken } from "../../lib/jwt";
 import { UserRepositoryErrorCode, type IUserRepository } from "./repository-interface";
-import type { ISessionService } from "../auth/session/service";
+import type { ISessionService, SessionEntity } from "../auth/session/service";
 import type { IPasswordHasher } from "../auth/password-hasher";
 import { config } from "../config";
+import { TokenType, type ITokenService } from "../auth/token/service";
 
 export type UserEntity = {
   id: string;
@@ -44,17 +44,23 @@ export type LoginDto = {
   password: string;
 };
 
-export type LoggedInUser = {
+export type TokenPair = {
+  accessToken: string;
   refreshToken: string;
+}
+
+export type LoggedInUserDto = {
+  tokens: TokenPair;
   user: UserDto;
 };
 
 export interface IUserService {
   register(dto: RegisterUserDto): ResultAsync<UserDto, UserError>;
-  login(dto: LoginDto): ResultAsync<LoggedInUser, UserError>;
+  login(dto: LoginDto): ResultAsync<LoggedInUserDto, UserError>;
   logout(refreshToken: string): ResultAsync<void, UserError>;
   list(): ResultAsync<UserDto[], UserError>;
   get(userId: string): ResultAsync<UserDto, UserError>;
+  refresh(refreshToken: string): ResultAsync<TokenPair, UserError>;
 }
 
 //================= The user service implementation ==========/
@@ -71,8 +77,10 @@ export class UserService implements IUserService {
     private readonly sessionService: ISessionService,
     private readonly userRepo: IUserRepository,
     private readonly passwordHasher: IPasswordHasher,
+    private readonly tokenService: ITokenService,
   ) {}
 
+  //============== Private methods ===================/
   private hashPassword(password: string): ResultAsync<string, UserError> {
     return ResultAsync.fromPromise(this.passwordHasher.hash(password), (e) =>
       UserError.create("PASSWORD_FAILURE", { cause: e }),
@@ -84,6 +92,16 @@ export class UserService implements IUserService {
     );
   }
 
+  /** Signs the tokens for the given user and session. */
+  private signTokens(user: { id: string; username: string }, session: { sessionId: string }): ResultAsync<TokenPair, UserError> {
+    const accessToken = this.tokenService.create({ type: TokenType.Access, userId: user.id, username: user.username });
+    const refreshToken = this.tokenService.create({ type: TokenType.Refresh, sessionId: session.sessionId });
+    return ResultAsync.combine([accessToken, refreshToken])
+      .map(([accessToken, refreshToken]) => ({ accessToken, refreshToken }))
+      .mapErr((error) => UserError.create('SERVICE_FAILURE', { payload: { name: error.name }, cause: error, status: error.status }));
+  }
+
+  //================= Public methods ===================/
   register(dto: RegisterUserDto): ResultAsync<UserDto, UserError> {
     // Check if the user already exists
     return (
@@ -100,12 +118,12 @@ export class UserService implements IUserService {
             })
             .map(mapUserToDto) // to DTO
             .mapErr((e) => {
-              switch (e.type) {
+              switch (e.code) {
                 case UserRepositoryErrorCode.UniqueViolation:
                   return UserError.create("USER_ALREADY_EXISTS", {
                     message: "Username or email already exists",
                   });
-                case UserRepositoryErrorCode.Other:
+                case UserRepositoryErrorCode.Unknown:
                   return UserError.create("STORAGE_FAILURE", { cause: e.cause });
               }
             }); // repository error -> UserError
@@ -113,7 +131,7 @@ export class UserService implements IUserService {
     );
   }
 
-  login(dto: LoginDto): ResultAsync<LoggedInUser, UserError> {
+  login(dto: LoginDto): ResultAsync<LoggedInUserDto, UserError> {
     return (
       // query the user by username
       fromRepo(this.userRepo.selectByUsername(dto.username))
@@ -139,14 +157,9 @@ export class UserService implements IUserService {
             .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }));
         })
         // sign session token
-        .andThen(({ session, user }) => {
-          return RefreshToken.create({ sessionId: session.sessionId })
-            .mapErr((e) => UserError.create("TOKEN_FAILURE", { cause: e }))
-            .map((t) => ({ refreshToken: t, user: mapUserToDto(user) }));
-        })
-        .andThen((loggedInUser) => {
-          return ok(loggedInUser);
-        })
+        .andThen(({ session, user }) => this.signTokens(user, session)
+          .map((tokens) => ({ tokens, user: mapUserToDto(user) }))
+        )
     );
   }
 
@@ -167,5 +180,18 @@ export class UserService implements IUserService {
         Nothing: () => errAsync(UserError.create('USER_NOT_FOUND')),
         Just: (user) => okAsync(mapUserToDto(user)),
       }))
+  }
+
+  refresh(refreshToken: string): ResultAsync<TokenPair, UserError> {
+    const this_ = this;
+    return safeTry(async function* () {
+      const session = yield* this_.sessionService.decode(refreshToken)
+        .mapErr((error) => UserError.create('TOKEN_FAILURE', { cause: error }));
+      const newSession = yield* this_.sessionService.rotate(session, { expiresIn: config.jwt.refreshToken.expiration })
+        .mapErr((error) => UserError.create('SERVICE_FAILURE', {message: "failed to create new session", payload: {name: error.name}, cause: error}));
+      const user = yield* this_.get(session.userId);
+      const tokens = yield* this_.signTokens(user, newSession);
+      return okAsync(tokens);
+    })
   }
 }

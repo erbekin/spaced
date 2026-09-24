@@ -14,7 +14,7 @@ export interface UserErrors {
 
 export type UserError = ErrorModule<UserErrors>;
 
-export const UserError = makeErrorFactory<UserError>('UserError', {
+export const UserError = makeErrorFactory<UserError>('user', {
   STORAGE_FAILURE: {message: 'Storage failure', status: 500},
   USER_ALREADY_EXISTS: {message: 'User already exists', status: 409},
   USER_NOT_FOUND: {message: 'User not found', status: 404},

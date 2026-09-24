@@ -9,8 +9,8 @@ export const ListUsersController =
       (list) => {
         res.json(list);
       },
-      (e) => {
-        res.status(e.status ?? 500).json(e);
+      (error) => {
+        res.status(error.status).json(error.toJSON());
       },
     );
   };

@@ -9,7 +9,7 @@ import { Maybe } from "purify-ts";
 
 class UserRepositoryError extends Error implements IUserRepositoryError {
   constructor(
-    readonly type: UserRepositoryErrorCode,
+    readonly code: UserRepositoryErrorCode,
     override message: string,
     cause?: unknown,
   ) {
@@ -31,16 +31,10 @@ class _PrismaUserRepository implements IUserRepository {
           },
         });
       },
-      (e) => {
-        if (e.caught)
-          return new UserRepositoryError(
-            UserRepositoryErrorCode.UniqueViolation,
-            "unique violation",
-            e.caught,
-          );
-        return new UserRepositoryError(UserRepositoryErrorCode.Other, "other error", e.uncaught);
-      },
-    );
+    ).mapErr((errInfo) => {
+      if (errInfo.status === 'caught-known') return new UserRepositoryError(UserRepositoryErrorCode.UniqueViolation, 'email or username violates uniqe constraint');
+      return new UserRepositoryError(UserRepositoryErrorCode.Unknown, 'unknown error', errInfo.error);
+    });
   }
 
   selectByUsername(username: string): ResultAsync<Maybe<UserEntity>, IUserRepositoryError> {
@@ -48,13 +42,13 @@ class _PrismaUserRepository implements IUserRepository {
       prisma.user.findUnique({
         where: { username },
       }),
-      (e) => new UserRepositoryError(UserRepositoryErrorCode.Other, "other error", e),
+      (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
     ).map(Maybe.fromNullable);
   }
   selectAll(): ResultAsync<UserEntity[], IUserRepositoryError> {
     return ResultAsync.fromPromise(
       prisma.user.findMany(),
-      (e) => new UserRepositoryError(UserRepositoryErrorCode.Other, "other error", e),
+      (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
     );
   }
   selectById(userId: string): ResultAsync<Maybe<UserEntity>, IUserRepositoryError> {
@@ -62,7 +56,7 @@ class _PrismaUserRepository implements IUserRepository {
       prisma.user.findUnique({
         where: { id: userId },
       }),
-      (e) => new UserRepositoryError(UserRepositoryErrorCode.Other, "other error", e),
+      (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
     ).map(Maybe.fromNullable);
   }
 }
