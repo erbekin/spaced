@@ -10,6 +10,7 @@ import { LoginUserController, AlreadyLoggedInMiddleware } from "./controller/log
 import { MeUserController } from "./controller/me";
 import { TokenService } from "../auth/token/service";
 import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth";
+import { RefreshUserController } from "./controller/refresh";
 
 
 
@@ -37,6 +38,9 @@ export function createRouter(base: string): Router {
   router.post('/register', RegisterUserController(userService))
 
   router.post('/login', AlreadyLoggedInMiddleware(sessionService), LoginUserController(userService))
+
+
+  router.post('/refresh', RefreshUserController(userService))
 
   const accessTokenAuthMiddleware = AccessTokenAuthMiddleware(tokenService);
 

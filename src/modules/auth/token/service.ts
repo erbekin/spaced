@@ -67,7 +67,6 @@ export class TokenService implements ITokenService {
             },
             (error, decoded) => {
               if (error === null) {
-                console.log("decoded",decoded)
                 const payload = decoded as jwtlib.JwtPayload;
                 if (!payload.sub || !payload.username) return reject(TokenError.create('INVALID_FORMAT', {message: "'sub' or 'username' missing in jwt payload"}));
                 resolve({ type: TokenType.Access, userId: payload.sub, username: payload.username });
