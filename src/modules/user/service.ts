@@ -5,6 +5,7 @@ import type { ISessionService, SessionEntity } from "../auth/session/service";
 import type { IPasswordHasher } from "../auth/password-hasher";
 import { config } from "../config";
 import { TokenType, type ITokenService } from "../auth/token/service";
+import type { AppError } from "../../lib/error-module";
 
 export type UserEntity = {
   id: string;
@@ -57,7 +58,7 @@ export type LoggedInUserDto = {
 export interface IUserService {
   register(dto: RegisterUserDto): ResultAsync<UserDto, UserError>;
   login(dto: LoginDto): ResultAsync<LoggedInUserDto, UserError>;
-  logout(refreshToken: string): ResultAsync<void, UserError>;
+  logout(refreshToken: string): ResultAsync<void, AppError>;
   list(): ResultAsync<UserDto[], UserError>;
   get(userId: string): ResultAsync<UserDto, UserError>;
   refresh(refreshToken: string): ResultAsync<TokenPair, UserError>;
@@ -98,7 +99,7 @@ export class UserService implements IUserService {
     const refreshToken = this.tokenService.create({ type: TokenType.Refresh, sessionId: session.sessionId });
     return ResultAsync.combine([accessToken, refreshToken])
       .map(([accessToken, refreshToken]) => ({ accessToken, refreshToken }))
-      .mapErr((error) => UserError.create('SERVICE_FAILURE', { payload: { name: error.name }, cause: error, status: error.status }));
+      .mapErr((error) => UserError.create('SERVICE_FAILURE', { cause: error}));
   }
 
   //================= Public methods ===================/
@@ -154,7 +155,7 @@ export class UserService implements IUserService {
             // session expires when the refresh token expires
             .create(user.id, { expiresIn: config.jwt.refreshToken.expiration })
             .map((s) => ({ session: s, user }))
-            .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }));
+            .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
         })
         // sign session token
         .andThen(({ session, user }) => this.signTokens(user, session)
@@ -167,10 +168,10 @@ export class UserService implements IUserService {
     const thisService = this;
     return safeTry(async function* () {
       const session = yield* thisService.sessionService.decode(refreshToken)
-        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }));
+        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
       return thisService.sessionService
         .revoke(session.sessionId)
-        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }));
+        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
     })
 
   }
@@ -193,7 +194,7 @@ export class UserService implements IUserService {
       const session = yield* this_.sessionService.decode(refreshToken)
         .mapErr((error) => UserError.create('TOKEN_FAILURE', { cause: error }));
       const newSession = yield* this_.sessionService.rotate(session, { expiresIn: config.jwt.refreshToken.expiration })
-        .mapErr((error) => UserError.create('SERVICE_FAILURE', {message: "failed to create new session", payload: {name: error.name}, cause: error}));
+        .mapErr((error) => UserError.create('SERVICE_FAILURE', {message: "failed to create new session", cause: error}));
       const user = yield* this_.get(session.userId);
       const tokens = yield* this_.signTokens(user, newSession);
       return okAsync(tokens);

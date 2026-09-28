@@ -69,12 +69,12 @@ export class TokenService implements ITokenService {
             (error, decoded) => {
               if (error === null) {
                 const payload = decoded as jwtlib.JwtPayload;
-                if (!payload.sub || !payload.username) return reject(TokenError.create('INVALID_FORMAT', {message: "'sub' or 'username' missing in jwt payload"}));
+                if (!payload.sub || !payload.username) return reject(TokenError.create('INVALID_TOKEN', {message: "'sub' or 'username' missing in jwt payload"}));
                 resolve({ type: TokenType.Access, userId: payload.sub, username: payload.username });
               } else if (error instanceof jwtlib.TokenExpiredError) {
                 return reject(TokenError.create('EXPIRED', {cause: error, message: error.message, payload: {expiredAt: error.expiredAt}}));
               } else if (error instanceof jwtlib.JsonWebTokenError) {
-                return reject(TokenError.create('INVALID_FORMAT', {cause: error, message: error.message}));
+                return reject(TokenError.create('INVALID_TOKEN', {cause: error, message: error.message}));
               }
             },
           );
@@ -123,12 +123,12 @@ export class TokenService implements ITokenService {
             (error, decoded) => {
               if (error === null) {
                 const payload = decoded as jwtlib.JwtPayload;
-                if (!payload.jti) return reject(TokenError.create('INVALID_FORMAT', {message: "'jti' missing in jwt payload"}));
+                if (!payload.jti) return reject(TokenError.create('INVALID_TOKEN', {message: "'jti' missing in jwt payload"}));
                 resolve({ type: TokenType.Refresh, sessionId: payload.jti });
               } else if (error instanceof jwtlib.TokenExpiredError) {
                 return reject(TokenError.create('EXPIRED', {cause: error, message: error.message, payload: {expiredAt: error.expiredAt}}));
               } else if (error instanceof jwtlib.JsonWebTokenError) {
-                return reject(TokenError.create('INVALID_FORMAT', {cause: error, message: error.message}));
+                return reject(TokenError.create('INVALID_TOKEN', {cause: error, message: error.message}));
               }
             },
           );
