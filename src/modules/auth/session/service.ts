@@ -127,7 +127,7 @@ export class SessionService implements ISessionService {
 
   decode(refreshToken: string): ResultAsync<SessionEntity, SessionError> {
     return this.tokenService.verify(TokenType.Refresh, refreshToken)
-      .mapErr((e) => SessionError.create('INVALID_TOKEN', { cause: e }))
+      .mapErr((e) => SessionError.create('SERVICE_FAILURE', { cause: e}))
       .andThen((payload) => this.repository.findById(payload.sessionId).mapErr((error) => SessionError.create('STORAGE_FAILURE', { cause: error })))
       .andThen((session) => session
         ? okAsync(session)

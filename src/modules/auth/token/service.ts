@@ -1,6 +1,7 @@
 import { ResultAsync } from "neverthrow";
 import { TokenError } from "./errors";
 import jwtlib from "jsonwebtoken";
+import { config as appconfig} from "../../config";
 
 export enum TokenType {
   Access = "AccessToken",
@@ -37,10 +38,10 @@ export class TokenService implements ITokenService {
         new Promise<string>((resolve, reject) => {
           jwtlib.sign(
             { username: config.username },
-            Bun.env.JWT_SECRET_ACCESS,
+            appconfig.jwt.accessToken.secret,
             {
               algorithm: "HS256",
-              expiresIn: Bun.env.JWT_ACCESS_TOKEN_EXPIRY,
+              expiresIn: appconfig.jwt.accessToken.expiration / 1000,
               subject: config.userId
             },
             (err, token) => {
@@ -61,7 +62,7 @@ export class TokenService implements ITokenService {
         new Promise<AccessTokenConfig>((resolve, reject) => {
           jwtlib.verify(
             token,
-            Bun.env.JWT_SECRET_ACCESS,
+            appconfig.jwt.accessToken.secret,
             {
               algorithms: ["HS256"],
             },
@@ -91,11 +92,11 @@ export class TokenService implements ITokenService {
         new Promise<string>((resolve, reject) => {
           jwtlib.sign(
             {}, // no-custom payload, jti is provided in options
-            Bun.env.JWT_SECRET_REFRESH,
+            appconfig.jwt.refreshToken.secret,
             {
               algorithm: "HS256",
               jwtid: config.sessionId,
-              expiresIn: Bun.env.JWT_REFRESH_TOKEN_EXPIRY,
+              expiresIn: appconfig.jwt.refreshToken.expiration / 1000,
             },
             (error, token) => {
               if (error || !token) reject(TokenError.create('OTHER', {cause: error}));
@@ -115,7 +116,7 @@ export class TokenService implements ITokenService {
         new Promise<RefreshTokenConfig>((resolve, reject) => {
           jwtlib.verify(
             token,
-            Bun.env.JWT_SECRET_REFRESH,
+            appconfig.jwt.refreshToken.secret,
             {
               algorithms: ["HS256"],
             },

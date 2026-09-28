@@ -8,7 +8,7 @@ export interface TokenErrors {
 
 export type TokenError = ErrorModule<TokenErrors>;
 
-export const TokenError = makeErrorFactory<TokenError>('token', {
+export const TokenError = makeErrorFactory<TokenError>('auth::token', {
   INVALID_FORMAT: { message: 'Invalid token format', status: 400 },
   EXPIRED: { message: 'Token expired', status: 401 },
   OTHER: { message: 'Unidentified token error', status: 500 },

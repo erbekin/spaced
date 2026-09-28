@@ -11,6 +11,7 @@ import { MeUserController } from "./controller/me";
 import { TokenService } from "../auth/token/service";
 import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth";
 import { RefreshUserController } from "./controller/refresh";
+import { LogoutUserController } from "./controller/logout";
 
 
 
@@ -25,6 +26,9 @@ const userService =
     tokenService,
   );
 
+const accessTokenAuthMiddleware = AccessTokenAuthMiddleware(tokenService);
+
+
 export function createRouter(base: string): Router {
   const router = Router();
 
@@ -34,16 +38,10 @@ export function createRouter(base: string): Router {
   });
 
   router.get('/list', ListUsersController(userService));
-
   router.post('/register', RegisterUserController(userService))
-
   router.post('/login', AlreadyLoggedInMiddleware(sessionService), LoginUserController(userService))
-
-
   router.post('/refresh', RefreshUserController(userService))
-
-  const accessTokenAuthMiddleware = AccessTokenAuthMiddleware(tokenService);
-
+  router.post('/logout', LogoutUserController(userService))
   router.get('/me', accessTokenAuthMiddleware, MeUserController(userService))
   return router;
 }

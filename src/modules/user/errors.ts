@@ -7,9 +7,7 @@ export interface UserErrors {
   TOKEN_FAILURE: undefined;
   INVALID_CREDENTIALS: undefined;
   PASSWORD_FAILURE: undefined;
-  SERVICE_FAILURE: {
-    name: string;
-  };
+  SERVICE_FAILURE: undefined;
 }
 
 export type UserError = ErrorModule<UserErrors>;
@@ -21,5 +19,5 @@ export const UserError = makeErrorFactory<UserError>('user', {
   TOKEN_FAILURE: {message: 'Token failure', status: 401},
   INVALID_CREDENTIALS: {message: 'Invalid credentials', status: 401},
   PASSWORD_FAILURE: {message: 'Password hash failure', status: 500},
-  SERVICE_FAILURE: {message: 'Service failure', status: 500},
+  SERVICE_FAILURE: {message: 'Service failure'},
 });

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "rt": "bunx --bun",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "db:empty" : "bun --bun ./scripts/emptyDb.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

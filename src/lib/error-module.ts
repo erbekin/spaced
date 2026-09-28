@@ -108,7 +108,7 @@ function build<M>(name: string, spec: ErrorSpec<M>): ErrorFactory<M> {
     const init = (args[0] ?? {}) as { message?: string; cause?: unknown; payload?: M[C], status?: number };
     return new AppError<M, C>(name, code, init.message ?? spec[code].message ?? code, {
       ...init,
-      status: init.status ?? spec[code]?.status,
+      status: init.status ?? spec[code]?.status ?? (init.cause instanceof AppError ? init.cause?.status : undefined),
     });
   }
 

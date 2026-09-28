@@ -10,7 +10,7 @@ export interface SessionErrors {
 
 export type SessionError = ErrorModule<SessionErrors>;
 
-export const SessionError = makeErrorFactory<SessionError>('Session', {
+export const SessionError = makeErrorFactory<SessionError>('auth::session', {
   INVALID_EXPIRY: { message: 'Invalid session expiry' },
   NOT_FOUND: { message: 'Session not found' },
   USER_NOT_FOUND: { message: 'User not found' },

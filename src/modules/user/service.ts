@@ -164,10 +164,15 @@ export class UserService implements IUserService {
   }
 
   logout(refreshToken: string): ResultAsync<void, UserError> {
-    return this.sessionService
-      .revoke(refreshToken)
-      .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }))
-      .map(() => undefined);
+    const thisService = this;
+    return safeTry(async function* () {
+      const session = yield* thisService.sessionService.decode(refreshToken)
+        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }));
+      return thisService.sessionService
+        .revoke(session.sessionId)
+        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e, payload: { name: e.name } }));
+    })
+
   }
 
   list(): ResultAsync<UserDto[], UserError> {
