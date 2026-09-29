@@ -27,6 +27,15 @@ export interface ISessionRepositoryError extends Error {
 /** Persistence port. These promises may reject (driver errors, timeouts, ...). */
 export interface ISessionRepository {
   insert(session: ISessionInsertArgs): ResultAsync<SessionEntity, ISessionRepositoryError>;
+  /**
+   * Returns an existing non-expired session for this user, or creates a new one.
+   * This operation is expected to be concurrency-safe for repeated login requests.
+   */
+  findActiveOrInsert(
+    userId: string,
+    now: Date,
+    session: ISessionInsertArgs,
+  ): ResultAsync<SessionEntity, ISessionRepositoryError>;
   findById(sessionId: string): ResultAsync<SessionEntity | null, ISessionRepositoryError>;
   /** @return null if session not found, i.e. delete *0 or 1* session  */
   tryDeleteById(sessionId: string): ResultAsync<SessionEntity | null, ISessionRepositoryError>;
