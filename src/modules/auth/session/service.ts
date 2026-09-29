@@ -39,6 +39,15 @@ export interface ISessionService {
   ): ResultAsync<SessionEntity, SessionError>;
 
   /**
+   * Returns an existing non-expired session for the user or creates a new one.
+   * Implementations should avoid creating duplicate sessions on concurrent logins.
+   */
+  findActiveOrCreate(
+    userId: string,
+    options: ISessionCreateOptions,
+  ): ResultAsync<SessionEntity, SessionError>;
+
+  /**
    * Finds a session by its ID.
    *
    * @param sessionId The ID of the session to find.
@@ -110,6 +119,20 @@ export class SessionService implements ISessionService {
         userAgent: options.userAgent ?? null,
         ipAddress: options.ipAddress ?? null,
       }).mapErr((error) => error.code === 'ReferenceError' ? SessionError.create('USER_NOT_FOUND', { cause: error }) : SessionError.create('STORAGE_FAILURE', { cause: error }));
+  }
+
+  findActiveOrCreate(
+    userId: string,
+    options: ISessionCreateOptions,
+  ): ResultAsync<SessionEntity, SessionError> {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + options.expiresIn);
+    return this.repository.findActiveOrInsert(userId, now, {
+      userId,
+      expiresAt,
+      userAgent: options.userAgent ?? null,
+      ipAddress: options.ipAddress ?? null,
+    }).mapErr((error) => error.code === 'ReferenceError' ? SessionError.create('USER_NOT_FOUND', { cause: error }) : SessionError.create('STORAGE_FAILURE', { cause: error }));
   }
 
   find(sessionId: string): ResultAsync<Maybe<SessionEntity>, SessionError> {

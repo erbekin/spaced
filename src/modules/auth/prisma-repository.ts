@@ -35,6 +35,41 @@ class _PrismaSessionRepository implements ISessionRepository {
     });
   }
 
+  findActiveOrInsert(
+    userId: string,
+    now: Date,
+    session: ISessionInsertArgs,
+  ): ResultAsync<SessionEntity, ISessionRepositoryError> {
+    return handleKnownRequestErrorRes(['P2003'], () => prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId})::bigint)`;
+      const activeSession = await tx.session.findFirst({
+        where: {
+          userId,
+          expiresAt: { gt: now },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (activeSession) return activeSession;
+      return tx.session.create({
+        data: {
+          sessionId: Maybe.fromNullable(session.sessionId).orDefaultLazy(() => crypto.randomUUID()),
+          userId: session.userId,
+          userAgent: session.userAgent,
+          ipAddress: session.ipAddress,
+          expiresAt: session.expiresAt,
+          createdAt: session.createdAt,
+        },
+      });
+    })).orElse((errInfo) => {
+      switch (errInfo.status) {
+        case 'caught-known':
+          return errAsync(new SessionRepositoryError('ReferenceError', 'user reference error', errInfo.error));
+        default:
+          return errAsync(new SessionRepositoryError('UnknownError', 'failed to find active or insert session: uncaught error', errInfo.error));
+      }
+    });
+  }
+
   findById(sessionId: string): ResultAsync<SessionEntity | null, ISessionRepositoryError> {
     return ResultAsync.fromPromise(prisma.session.findUnique({
       where: {sessionId}

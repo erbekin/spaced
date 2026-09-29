@@ -153,7 +153,7 @@ export class UserService implements IUserService {
         .andThen((user) => {
           return this.sessionService
             // session expires when the refresh token expires
-            .create(user.id, { expiresIn: config.jwt.refreshToken.expiration })
+            .findActiveOrCreate(user.id, { expiresIn: config.jwt.refreshToken.expiration })
             .map((s) => ({ session: s, user }))
             .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
         })
