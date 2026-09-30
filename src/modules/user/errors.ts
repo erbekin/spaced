@@ -1,6 +1,6 @@
 import { AppError, type ErrorModule, makeErrorFactory } from '../../lib/error-module';
 
-export interface UserErrors {
+export interface IUserErrors {
   STORAGE_FAILURE: undefined;
   USER_ALREADY_EXISTS: undefined;
   USER_NOT_FOUND: undefined;
@@ -10,7 +10,7 @@ export interface UserErrors {
   SERVICE_FAILURE: undefined;
 }
 
-export type UserError = ErrorModule<UserErrors>;
+export type UserError = ErrorModule<IUserErrors>;
 
 export const UserError = makeErrorFactory<UserError>('user', {
   STORAGE_FAILURE: {message: 'Storage failure', status: 500},

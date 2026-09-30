@@ -1,10 +1,9 @@
 import express from "express";
-import { createRouter } from "./modules/user/router";
 import { shutdown } from "./lib/shutdown";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { config } from "./modules/config";
-
+import buildRouters from "./modules/build-routers";
 
 const app = express();
 
@@ -17,10 +16,7 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
-const userRouter = createRouter('/users');
-
-app.use('/user', userRouter);
-
+buildRouters(app);
 
 // not found
 app.use((req, res) => {

@@ -1,6 +1,7 @@
 import type { Handler } from "express";
 import { Maybe } from "purify-ts";
 import { TokenType, type ITokenService, type TokenConfig } from "../token/service";
+import { defineErrors } from "../../../lib/api-error";
 
 declare global {
   namespace Express {
@@ -12,6 +13,10 @@ declare global {
     }
   }
 }
+
+const moduleErrors = defineErrors('auth', {
+  NO_TOKEN: {message: "No token provided", status: 401},
+})
 
 export const AccessTokenAuthMiddleware = (tokenService: ITokenService): Handler => async (req, res, next) => {
   // Extract token string from authorization header, empty string if not present
@@ -27,7 +32,7 @@ export const AccessTokenAuthMiddleware = (tokenService: ITokenService): Handler 
   // If no token is provided, return 401 Unauthorized
   if (token === "") {
     res.header('WWW-Authenticate', 'Bearer realm="token"');
-    return res.status(401).json({ message: "No token provided" });
+    return moduleErrors.use('NO_TOKEN')((error) => res.status(error.status).json(error));
   }
   // verify token.
   // invalid -> 401

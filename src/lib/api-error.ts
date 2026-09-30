@@ -60,6 +60,7 @@ export interface ApiErrorFactory<M> {
   create<C extends ApiErrCode<M>>(code: C, ...args: CreateArgs<M, C>): ApiError<M, C>;
   is(err: unknown): err is ApiErrorModule<M>;
   is<C extends ApiErrCode<M>>(err: unknown, code: C): err is ApiError<M, C>;
+  use<C extends ApiErrCode<M>, T>(code: C, ...args: CreateArgs<M, C>): (onError: (err: ApiError<M, C>) => T) => T;
 }
 
 // ---- defineErrors ----
@@ -84,6 +85,10 @@ export function defineErrors<S extends Record<string, SpecEntry>>(
     };
   }
 
+  function use<C extends ApiErrCode<M>, T>(code: C, ...args: CreateArgs<M, C>): (onError: (err: ApiError<M, C>) => T) => T {
+    return (onError) => onError(create(code, ...args));
+  }
+
   function is(err: unknown, code?: string): boolean {
     if (typeof err !== 'object' || err === null) return false;
     const e = err as Record<string, unknown>;
@@ -95,5 +100,10 @@ export function defineErrors<S extends Record<string, SpecEntry>>(
     );
   }
 
-  return { module: moduleName, create, is: is as ApiErrorFactory<M>['is'] };
+  return { module: moduleName, create, is: is as ApiErrorFactory<M>['is'], use };
+}
+
+
+export function useError<M, C extends ApiErrCode<M>, T>(error: ApiError<M, C>, onError: (err: ApiError<M, C>) => T) {
+  return onError(error);
 }

@@ -1,10 +1,6 @@
 import { Router } from "express";
 import { RegisterUserController } from "./controller/register";
-import { UserService } from "./service";
-import { SessionService } from "../auth/session/service";
-import { PrismaSessionRepository } from "../auth/prisma-repository";
-import { PrismaUserRepository } from "./prisma-repository";
-import { BunPasswordHasher } from "../auth/password-hasher";
+import { type IUserService } from "./service";
 import { ListUsersController } from "./controller/list";
 import { LoginUserController, AlreadyLoggedInMiddleware } from "./controller/login";
 import { MeUserController } from "./controller/me";
@@ -12,37 +8,42 @@ import { TokenService } from "../auth/token/service";
 import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth";
 import { RefreshUserController } from "./controller/refresh";
 import { LogoutUserController } from "./controller/logout";
+import type { ISessionService } from "../auth/session/service";
 
 
 
-const tokenService = new TokenService();
-const sessionService = new SessionService(PrismaSessionRepository, tokenService);
-
-const userService =
-  new UserService(
-    sessionService,
-    PrismaUserRepository,
-    BunPasswordHasher.getInstance(),
-    tokenService,
-  );
-
-const accessTokenAuthMiddleware = AccessTokenAuthMiddleware(tokenService);
 
 
-export function createRouter(base: string): Router {
+
+
+export interface IUserRouterDependencies  {
+  userService: IUserService;
+  tokenService: TokenService;
+  sessionService: ISessionService;
+}
+export interface IUserRouterOptions {
+  base: string;
+}
+export type IUserRouterParams = IUserRouterDependencies & IUserRouterOptions
+
+export function createRouter(params: IUserRouterParams): Router {
+
   const router = Router();
+  const { base } = params;
 
   // redirect to /list by default
   router.get('/', (req, res) => {
     res.redirect(`${base}/list`)
   });
 
-  router.get('/list', ListUsersController(userService));
-  router.post('/register', RegisterUserController(userService))
-  router.post('/login', AlreadyLoggedInMiddleware(sessionService), LoginUserController(userService))
-  router.post('/refresh', RefreshUserController(userService))
-  router.post('/logout', LogoutUserController(userService))
-  router.get('/me', accessTokenAuthMiddleware, MeUserController(userService))
+  const accessTokenAuthMiddleware = AccessTokenAuthMiddleware(params.tokenService);
+
+  router.get('/list', ListUsersController(params.userService));
+  router.post('/register', RegisterUserController(params.userService))
+  router.post('/login', AlreadyLoggedInMiddleware(params.sessionService), LoginUserController(params.userService))
+  router.post('/refresh', RefreshUserController(params.userService))
+  router.post('/logout', LogoutUserController(params.userService))
+  router.get('/me', accessTokenAuthMiddleware, MeUserController(params.userService))
   return router;
 }
 

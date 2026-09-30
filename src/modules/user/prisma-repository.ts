@@ -17,7 +17,16 @@ class UserRepositoryError extends Error implements IUserRepositoryError {
   }
 }
 
-class _PrismaUserRepository implements IUserRepository {
+export class PrismaUserRepository implements IUserRepository {
+  private constructor() { }
+  private static instance: PrismaUserRepository | undefined;
+  static getInstance(): PrismaUserRepository {
+    if (!PrismaUserRepository.instance) {
+      PrismaUserRepository.instance = new PrismaUserRepository();
+    }
+    return PrismaUserRepository.instance;
+  }
+
   insert(user: IUserInsertArgs): ResultAsync<UserEntity, IUserRepositoryError> {
     return handleKnownRequestErrorRes(
       "P2002",
@@ -60,5 +69,3 @@ class _PrismaUserRepository implements IUserRepository {
     ).map(Maybe.fromNullable);
   }
 }
-
-export const PrismaUserRepository = new _PrismaUserRepository();
