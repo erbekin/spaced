@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { config } from "./modules/config";
 import buildRouters from "./modules/build-routers";
+import { usernameExpressHook } from "./modules/user/username";
 
 const app = express();
 
@@ -15,7 +16,8 @@ app.use(cookieParser())
 app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
-
+// this hook, normalizes usernames in params
+usernameExpressHook(app);
 buildRouters(app);
 
 // not found

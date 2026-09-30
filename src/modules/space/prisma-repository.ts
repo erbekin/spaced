@@ -3,8 +3,9 @@ import {
   SpaceRepositoryError,
   type ISpaceInsertArgs,
   type ISpaceRepository,
+  type ISpaceUpdateArgs,
 } from "./repository-interface";
-import type { SpaceEntity } from "./service";
+import type { Page, PageArgs, SpaceEntity, SpaceEntityWithOwner } from "./service";
 import { prisma } from "../../lib/prisma";
 import { handleKnownRequestErrorRes, type CaughtInfo } from "../../lib/prisma-utils";
 import { Maybe } from "purify-ts";
@@ -27,6 +28,9 @@ function toRepositoryError(errInfo: CaughtInfo): SpaceRepositoryError {
           "ForeignKeyViolationError",
           errInfo.error,
         );
+      if (errInfo.error.code === "P2025")
+        return new SpaceRepositoryError("Not found", "NotFoundError", errInfo.error);
+
       if (UNAVAILABLE_CODES.has(errInfo.error.code))
         return new SpaceRepositoryError("Database unavailable", "UnavailableError", errInfo.error);
       return new SpaceRepositoryError("Unknown repository error", "UnknownError", errInfo.error);
@@ -38,7 +42,7 @@ function toRepositoryError(errInfo: CaughtInfo): SpaceRepositoryError {
 }
 
 export class PrismaSpaceRepository implements ISpaceRepository {
-  private constructor() { }
+  private constructor() {}
   private static instance: PrismaSpaceRepository | undefined;
   static getInstance(): PrismaSpaceRepository {
     if (!PrismaSpaceRepository.instance) {
@@ -59,20 +63,95 @@ export class PrismaSpaceRepository implements ISpaceRepository {
       });
     }).mapErr(toRepositoryError);
   }
-  selectAll(ownerFilter?: { mode: 'ownerId' | 'username', value: string }): ResultAsync<SpaceEntity[], SpaceRepositoryError> {
-    return handleKnownRequestErrorRes('P2003', () => {
+  selectAll(
+    ownerFilter: {
+      mode: "ownerId" | "username";
+      value: string;
+    },
+    page: PageArgs,
+  ): ResultAsync<Page<SpaceEntity>, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes(["P2003"], () => {
       const owner = Maybe.fromNullable(ownerFilter?.mode)
         .map((mode) => {
-          return mode === 'ownerId' ? { id: ownerFilter?.value } : { username: ownerFilter?.value };
-        }).extract();
+          return mode === "ownerId" ? { id: ownerFilter?.value } : { username: ownerFilter?.value };
+        })
+        .extract();
       return prisma.space.findMany({
+        where: { owner },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: page.limit + 1,
+        ...(page.cursor && { cursor: { id: page.cursor }, skip: 1 }),
+      });
+    })
+      .map((spaces) => {
+        const hasMore = spaces.length > page.limit;
+        const items = hasMore ? spaces.slice(0, page.limit) : spaces;
+        return { items, nextCursor: hasMore ? spaces[page.limit - 1]!.id : null };
+      })
+      .mapErr(toRepositoryError);
+  }
+  selectOne(
+    spaceSlug: string,
+    ownerId: string,
+  ): ResultAsync<SpaceEntityWithOwner, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes("P2025", () => {
+      return prisma.space.findUniqueOrThrow({
         where: {
-          owner,
+          slug_ownerId: {
+            slug: spaceSlug,
+            ownerId,
+          },
         },
-        orderBy: {
-          createdAt: 'desc',
-        }
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          homePostId: true,
+          createdAt: true,
+          updatedAt: true,
+          ownerId: true,
+          owner: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+            },
+          },
+        },
       });
     }).mapErr(toRepositoryError);
+  }
+  update(
+    ownerId: string,
+    spaceSlug: string,
+    args: ISpaceUpdateArgs,
+  ): ResultAsync<SpaceEntity, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes(["P2002", "P2025"], () => {
+      return prisma.space.update({
+        where: {
+          slug_ownerId: {
+            slug: spaceSlug,
+            ownerId,
+          },
+        },
+        data: {
+          ...args,
+        },
+      });
+    }).mapErr(toRepositoryError);
+  }
+  delete(ownerId: string, spaceSlug: string): ResultAsync<void, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes("P2025", () => {
+      return prisma.space.delete({
+        where: {
+          slug_ownerId: {
+            slug: spaceSlug,
+            ownerId,
+          },
+        },
+      });
+    })
+      .mapErr(toRepositoryError)
+      .map(() => undefined);
   }
 }

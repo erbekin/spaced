@@ -1,16 +1,40 @@
-
 import type { Handler } from "express";
 import type { ISpaceService } from "../service";
+import z from "zod";
+import { defineErrors } from "../../../lib/api-error";
 
-export const ListSpaceController = (spaceService: ISpaceService) : Handler => (req, res) => {
-  const { username } = req.params;
-  if (typeof username !== 'string') {
-    throw new Error('username url parameter is required');
-  }
-  spaceService.list(username)
-    .match((spaces) => {
-      return res.status(200).json(spaces);
-    }, (error) => {
-      return res.status(error.status).json(error);
-    })
-}
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+const ListSpaceQuerySchema = z.object({
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_LIMIT)
+    .default(DEFAULT_LIMIT),
+  cursor: z.uuidv4().optional(),
+});
+
+const apiErrors = defineErrors('space::list', {
+  INVALID_INPUT: { message: "Invalid input", status: 400 },
+})
+
+export const ListSpaceController =
+  (spaceService: ISpaceService): Handler =>
+  (req, res) => {
+    const { username } = req.params;
+    if (typeof username !== "string") {
+      throw new Error("username url parameter is required");
+    }
+    const result = ListSpaceQuerySchema.safeParse(req.query);
+    if (!result.success) {
+      return apiErrors.use('INVALID_INPUT')((error) => res.status(error.status).json(error));
+    }
+    const { limit, cursor } = result.data;
+
+    spaceService.list(username, { limit, cursor }).match(
+      (page) => res.status(200).json(page),
+      (error) => res.status(error.status).json(error),
+    );
+  };

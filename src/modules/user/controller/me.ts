@@ -14,7 +14,7 @@ export const MeUserController =
         const error = MeError.create('UNAUTHORIZED');
         return res.status(error.status).json(error);
       }
-      userService.get(accessToken.userId)
+      userService.getById(accessToken.userId)
         .match(
           (user) => {
             res.json(user);

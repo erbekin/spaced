@@ -1,15 +1,21 @@
 import type { ResultAsync } from "neverthrow";
-import { type SpaceEntity } from "./service";
+import { type Page, type PageArgs, type SpaceEntity, type SpaceEntityWithOwner } from "./service";
 
 export interface ISpaceInsertArgs {
   name: string;
   slug: string;
   ownerId: string;
 }
+export interface ISpaceUpdateArgs {
+  name?: string;
+  slug?: string;
+  homePostId?: string | null;
+}
 
 export type SpaceRepositoryErrorCode =
   | 'UniqueViolationError'
   | 'ForeignKeyViolationError'
+  | 'NotFoundError'
   | 'UnavailableError'
   | 'UnknownError';
 
@@ -24,7 +30,12 @@ export class SpaceRepositoryError extends Error {
   }
 }
 
+
 export interface ISpaceRepository {
   insert(args: ISpaceInsertArgs): ResultAsync<SpaceEntity, SpaceRepositoryError>;
-  selectAll(ownerFilter?: { mode: 'ownerId' | 'username', value: string }): ResultAsync<SpaceEntity[], SpaceRepositoryError>;
+  selectAll(ownerFilter: { mode: 'ownerId' | 'username', value: string }, page: PageArgs): ResultAsync<Page<SpaceEntity>, SpaceRepositoryError>;
+  /** Returns NotFoundError if not found */
+  selectOne(spaceSlug: string, ownerId: string): ResultAsync<SpaceEntityWithOwner, SpaceRepositoryError>;
+  update(ownerId: string, spaceSlug: string, args: ISpaceUpdateArgs): ResultAsync<SpaceEntity, SpaceRepositoryError>;
+  delete(ownerId: string, spaceSlug: string): ResultAsync<void, SpaceRepositoryError>;
 }

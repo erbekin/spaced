@@ -22,7 +22,7 @@ export default function buildRouters(app: Application) {
       tokenService,
     );
 
-  const spaceService = new SpaceService(PrismaSpaceRepository.getInstance());
+  const spaceService = new SpaceService(PrismaSpaceRepository.getInstance(), userService);
 
   // wire up user router
   app.use('/users', createUserRouter({ base: "/users", userService, tokenService, sessionService }))

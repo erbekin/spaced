@@ -1,17 +1,18 @@
 import type { Handler } from "express";
 import z from "zod";
 import type { IUserService } from "../service";
-import { defineErrors } from "../../../lib/api-error";
+import { defineErrors, withPayload } from "../../../lib/api-error";
+import { USERNAME_REGEX } from "../username";
 
 const registerUserSchema = z.object({
   email: z.email(),
   password: z.string(),
-  username: z.string(),
+  username: z.string().min(3).max(48).regex(USERNAME_REGEX),
   name: z.string().optional(),
 });
 
 const RegisterError = defineErrors("user::register", {
-  INVALID_REQUEST_BODY: { message: "Invalid request body", status: 400 },
+  INVALID_REQUEST_BODY: withPayload<{issues: any}>({ message: "Invalid request body", status: 400 }),
 });
 
 export const RegisterUserController =
@@ -19,7 +20,7 @@ export const RegisterUserController =
   (req, res) => {
     const result = registerUserSchema.safeParse(req.body);
     if (!result.success) {
-      const error = RegisterError.create("INVALID_REQUEST_BODY");
+      const error = RegisterError.create("INVALID_REQUEST_BODY", {payload: {issues: result.error.issues}});
       return res.status(error.status).json(error);
     }
     const { email, password, username, name } = result.data;

@@ -60,7 +60,8 @@ export interface IUserService {
   login(dto: LoginDto): ResultAsync<LoggedInUserDto, UserError>;
   logout(refreshToken: string): ResultAsync<void, AppError>;
   list(): ResultAsync<UserDto[], UserError>;
-  get(userId: string): ResultAsync<UserDto, UserError>;
+  getById(userId: string): ResultAsync<UserDto, UserError>;
+  getByUsername(username: string): ResultAsync<UserDto, UserError>;
   refresh(refreshToken: string): ResultAsync<TokenPair, UserError>;
 }
 
@@ -180,8 +181,16 @@ export class UserService implements IUserService {
     return fromRepo(this.userRepo.selectAll()).map((users) => users.map(mapUserToDto));
   }
 
-  get(userId: string): ResultAsync<UserDto, UserError> {
+  getById(userId: string): ResultAsync<UserDto, UserError> {
     return fromRepo(this.userRepo.selectById(userId))
+      .andThen((user) => user.caseOf({
+        Nothing: () => errAsync(UserError.create('USER_NOT_FOUND')),
+        Just: (user) => okAsync(mapUserToDto(user)),
+      }))
+  }
+
+  getByUsername(username: string): ResultAsync<UserDto, UserError> {
+    return fromRepo(this.userRepo.selectByUsername(username))
       .andThen((user) => user.caseOf({
         Nothing: () => errAsync(UserError.create('USER_NOT_FOUND')),
         Just: (user) => okAsync(mapUserToDto(user)),
@@ -195,7 +204,7 @@ export class UserService implements IUserService {
         .mapErr((error) => UserError.create('TOKEN_FAILURE', { cause: error }));
       const newSession = yield* this_.sessionService.rotate(session, { expiresIn: config.jwt.refreshToken.expiration })
         .mapErr((error) => UserError.create('SERVICE_FAILURE', {message: "failed to create new session", cause: error}));
-      const user = yield* this_.get(session.userId);
+      const user = yield* this_.getById(session.userId);
       const tokens = yield* this_.signTokens(user, newSession);
       return okAsync(tokens);
     })
