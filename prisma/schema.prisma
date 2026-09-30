@@ -42,6 +42,9 @@ model Space {
   ownerId    String   @db.Uuid @map("owner_id")
   owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
   // Normal post listesi ilişkisi
   posts      Post[]   @relation("SpacePosts")
 
@@ -57,6 +60,10 @@ model Post {
   id        String   @id @default(uuid()) @db.Uuid
   title     String
   content   String
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
 
   // Ait olduğu space
   spaceId   String   @db.Uuid @map("space_id")
