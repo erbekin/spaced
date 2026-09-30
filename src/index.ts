@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
-const userRouter = createRouter('/user');
+const userRouter = createRouter('/users');
 
 app.use('/user', userRouter);
 
