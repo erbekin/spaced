@@ -48,14 +48,15 @@ export class AppError<M = any, C extends ErrCode<M> = ErrCode<M>> extends Error 
     payload: M[C];
     cause?: unknown;
   } {
-    return {
+    const base = {
       status: this.status,
       message: this.message,
       module: this.module,
       code: this.code,
       payload: this.payload,
-      ...(isDevelopment() ? { cause: serializeCause(this.cause) } : {}),
     };
+    const cause = serializeCause(this.cause, isDevelopment());
+    return cause === undefined ? base : { ...base, cause };
   }
 }
 
@@ -63,12 +64,27 @@ function isDevelopment(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
-function serializeCause(cause: unknown): unknown {
+function serializeCause(cause: unknown, dev: boolean): unknown {
+  if (cause === undefined) return undefined;
+
+  // AppError: always serialized. Its own toJSON applies the same rules to its cause.
   if (cause instanceof AppError) return cause.toJSON();
+
+  // Anything else: production stops here (the cause is omitted).
+  if (!dev) return undefined;
+
+  // Development: keep walking the chain to the bottom.
   if (cause instanceof Error) {
-    return { name: cause.name, message: cause.message, stack: cause.stack };
+    const out: Record<string, unknown> = {
+      name: cause.name,
+      message: cause.message,
+      stack: cause.stack,
+    };
+    const nested = serializeCause(cause.cause, dev);
+    if (nested !== undefined) out.cause = nested;
+    return out;
   }
-  return cause;
+  return cause; // non-Error values (strings, objects) as-is
 }
 
 /**
