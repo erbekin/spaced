@@ -28,7 +28,7 @@ export const RegisterUserController =
         res.status(201).json(userDto);
       },
       (error) => {
-        res.status(error.status).json({ error: error.toJSON() });
+        res.status(error.status).json(error);
       },
     );
   };
