@@ -21,6 +21,7 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   sessions     Session[]
   spaces      Space[]
+  @@map("users")
 }
 
 model Session {
@@ -34,6 +35,7 @@ model Session {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
+  @@map("sessions")
 }
 model Space {
   id         String   @id @default(uuid()) @db.Uuid
@@ -43,7 +45,7 @@ model Space {
   owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @default(now()) @map("updated_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Normal post listesi ilişkisi
   posts      Post[]   @relation("SpacePosts")
@@ -54,6 +56,9 @@ model Space {
 
   // also creates an index on slug and ownerId for efficient lookups
   @@unique([slug, ownerId])
+  @@index([ownerId, createdAt])
+
+  @@map("spaces")
 }
 
 model Post {
@@ -62,7 +67,7 @@ model Post {
   content   String
 
   createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @default(now()) @map("updated_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
 
   // Ait olduğu space
@@ -72,5 +77,7 @@ model Post {
   // Eğer bu post bir space'in homePost'u ise ters ilişki:
   homeSpace Space?   @relation("homePost")
   // allows finding posts by spaceId efficiently
-  @@index([spaceId])
+  @@index([spaceId, createdAt])
+
+  @@map("posts")
 }
