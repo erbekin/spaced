@@ -86,7 +86,7 @@ export class PrismaSpaceRepository implements ISpaceRepository {
       .map((spaces) => {
         const hasMore = spaces.length > page.limit;
         const items = hasMore ? spaces.slice(0, page.limit) : spaces;
-        return { items, nextCursor: hasMore ? spaces[page.limit - 1]!.id : null };
+        return { items, nextCursor: hasMore ? items[items.length - 1]!.id : null };
       })
       .mapErr(toRepositoryError);
   }
