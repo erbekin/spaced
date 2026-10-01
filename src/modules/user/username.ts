@@ -11,7 +11,7 @@ export function isValidUsername(u: string): boolean {
   return u.length >= USERNAME_MIN_LENGTH && u.length <= USERNAME_MAX_LENGTH && USERNAME_REGEX.test(u);
 }
 
-export function usernameExpressHook(app: Application) {
+export function applyUsernameExpressHook(app: Application) {
   app.param("username", (req, res, next, username) => {
     req.params.username = normalizeUsername(username);
     next();
