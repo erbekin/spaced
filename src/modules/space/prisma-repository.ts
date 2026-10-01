@@ -5,10 +5,11 @@ import {
   type ISpaceRepository,
   type ISpaceUpdateArgs,
 } from "./repository-interface";
-import type { Page, PageArgs, SpaceEntity, SpaceEntityWithOwner } from "./service";
+import type {SpaceEntity, SpaceEntityWithOwner } from "./service";
 import { prisma } from "../../lib/prisma";
 import { handleKnownRequestErrorRes, type CaughtInfo } from "../../lib/prisma-utils";
 import { Maybe } from "purify-ts";
+import type { PageArgs, Page } from "../../lib/pagination";
 
 const PRISMA_CODES = ["P2002", "P2003"];
 const UNAVAILABLE_CODES = new Set(["P1001", "P1002", "P1008", "P2024"]);

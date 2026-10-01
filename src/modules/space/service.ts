@@ -2,6 +2,7 @@ import type { ResultAsync } from "neverthrow";
 import { SpaceError } from "./errors";
 import type { ISpaceRepository } from "./repository-interface";
 import type { IUserService } from "../user/service";
+import type { Page, PageArgs } from "../../lib/pagination";
 
 
 export type SpaceEntity = {
@@ -33,8 +34,6 @@ export type UpdateSpaceDto = {
   /** null to remove the home post */
   homePostId?: string | null;
 }
-export type PageArgs = { limit: number; cursor?: string };
-export type Page<T> = { items: T[]; nextCursor: string | null };
 
 export interface ISpaceService {
   /** Creates a new space */

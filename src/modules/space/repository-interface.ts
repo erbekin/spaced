@@ -1,5 +1,6 @@
 import type { ResultAsync } from "neverthrow";
-import { type Page, type PageArgs, type SpaceEntity, type SpaceEntityWithOwner } from "./service";
+import type { SpaceEntity, SpaceEntityWithOwner } from "./service";
+import type { PageArgs, Page } from "../../lib/pagination";
 
 export interface ISpaceInsertArgs {
   name: string;

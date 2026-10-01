@@ -45,4 +45,4 @@ const deleteUser = await prisma.user.deleteMany({});
 console.log(`Deleted ${deleteSession.count} session(s) and ${deleteUser.count} user(s).`)
 await prisma.$disconnect();
 const elapsed = new Date().getTime() - now.getTime();
-console.log(`Operation completed at ${elapsed}ms.`);
+console.log(`Operation completed in ${elapsed}ms.`);
