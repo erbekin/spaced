@@ -5,12 +5,18 @@ import cookieParser from "cookie-parser";
 import { config } from "./modules/config";
 import buildRouters from "./modules/build-routers";
 import { applyUsernameExpressHook } from "./modules/user/username";
+import cors from "cors";
 
 const app = express();
 
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(cookieParser())
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite's default port
+  credentials: true,
+}))
+
 
 // hello server
 app.get('/', (req, res) => {
