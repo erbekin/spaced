@@ -3,15 +3,17 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "workspaces": ["client"],
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "rt": "bunx --bun",
-    "studio" : "bunx --bun prisma studio",
+    "studio": "bunx --bun prisma studio",
     "docs": "typedoc",
-    "db:empty" : "bun --bun ./scripts/emptyDb.ts"
+    "db:empty": "bun --bun ./scripts/emptyDb.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
     "@types/pg": "^8.23.1",
@@ -27,6 +29,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "eslint-plugin-neverthrow": "^1.1.4",
     "express": "^5.2.1",
