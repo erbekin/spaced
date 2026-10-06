@@ -21,6 +21,9 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   sessions     Session[]
   spaces      Space[]
+  // abone olunan spaces
+  subscriptions Subscription[] @relation("UserSubscriptions")
+
   @@map("users")
 }
 
@@ -54,6 +57,9 @@ model Space {
   homePostId String?  @unique @db.Uuid @map("home_post_id")
   homePost   Post?    @relation("homePost", fields: [homePostId], references: [id], onDelete: SetNull)
 
+  // abone olanlar
+  subscriptions Subscription[] @relation("SpaceSubscriptions")
+
   // also creates an index on slug and ownerId for efficient lookups
   @@unique([slug, ownerId])
   @@index([ownerId, createdAt])
@@ -80,4 +86,16 @@ model Post {
   @@index([spaceId, createdAt])
 
   @@map("posts")
+}
+
+model Subscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  spaceId   String   @db.Uuid @map("space_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, spaceId])
+  user      User    @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  space     Space   @relation("SpaceSubscriptions", fields: [spaceId], references: [id], onDelete: Cascade)
+  @@map("subscriptions")
 }

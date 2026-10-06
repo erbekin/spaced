@@ -2,7 +2,7 @@ import type { Handler } from "express";
 import type { ISpaceService } from "../service";
 import z from "zod";
 import { defineErrors, withPayload } from "../../../lib/api-error";
-import { slugSchema } from "../schema";
+import { slugSchema } from "../../schema";
 const createSpaceSchema = z.object({
   name: z.string(),
   slug: slugSchema,
