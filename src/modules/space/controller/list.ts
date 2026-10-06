@@ -1,20 +1,13 @@
 import type { Handler } from "express";
 import type { ISpaceService } from "../service";
-import z from "zod";
+
 import { defineErrors } from "../../../lib/api-error";
+import { pageSchema } from "../../../lib/pagination";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
-const ListSpaceQuerySchema = z.object({
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(MAX_LIMIT)
-    .default(DEFAULT_LIMIT),
-  cursor: z.uuidv4().optional(),
-});
+const ListSpaceQuerySchema = pageSchema({ defaultLimit: DEFAULT_LIMIT, maxLimit: MAX_LIMIT });
 
 const apiErrors = defineErrors('space::list', {
   INVALID_INPUT: { message: "Invalid input", status: 400 },

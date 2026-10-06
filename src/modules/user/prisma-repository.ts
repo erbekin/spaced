@@ -6,6 +6,7 @@ import { UserRepositoryErrorCode } from "./repository-interface";
 
 import type { UserEntity } from "./service";
 import { Maybe } from "purify-ts";
+import type { Page, PageArgs } from "../../lib/pagination";
 
 class UserRepositoryError extends Error implements IUserRepositoryError {
   constructor(
@@ -54,11 +55,19 @@ export class PrismaUserRepository implements IUserRepository {
       (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
     ).map(Maybe.fromNullable);
   }
-  selectAll(): ResultAsync<UserEntity[], IUserRepositoryError> {
+  selectAll(page: PageArgs): ResultAsync<Page<UserEntity>, IUserRepositoryError> {
     return ResultAsync.fromPromise(
-      prisma.user.findMany(),
+      prisma.user.findMany({
+        take: page.limit + 1,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...(page.cursor && {cursor: {id: page.cursor}, skip: 1})
+      }),
       (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
-    );
+    ).map((users) => {
+      const hasMore = users.length > page.limit;
+      const items = hasMore ? users.slice(0, page.limit) : users;
+      return {items, nextCursor: hasMore ? items[items.length - 1]!.id : null}
+    });
   }
   selectById(userId: string): ResultAsync<Maybe<UserEntity>, IUserRepositoryError> {
     return ResultAsync.fromPromise(

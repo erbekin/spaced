@@ -6,6 +6,7 @@ import type { IPasswordHasher } from "../auth/password-hasher";
 import { config } from "../config";
 import { TokenType, type ITokenService } from "../auth/token/service";
 import type { AppError } from "../../lib/error-module";
+import type { Page, PageArgs } from "../../lib/pagination";
 
 export type UserEntity = {
   id: string;
@@ -48,7 +49,7 @@ export type LoginDto = {
 export type TokenPair = {
   accessToken: string;
   refreshToken: string;
-}
+};
 
 export type LoggedInUserDto = {
   tokens: TokenPair;
@@ -59,7 +60,7 @@ export interface IUserService {
   register(dto: RegisterUserDto): ResultAsync<UserDto, UserError>;
   login(dto: LoginDto): ResultAsync<LoggedInUserDto, UserError>;
   logout(refreshToken: string): ResultAsync<void, AppError>;
-  list(): ResultAsync<UserDto[], UserError>;
+  list(page: PageArgs): ResultAsync<Page<UserDto>, UserError>;
   getById(userId: string): ResultAsync<UserDto, UserError>;
   getByUsername(username: string): ResultAsync<UserDto, UserError>;
   refresh(refreshToken: string): ResultAsync<TokenPair, UserError>;
@@ -95,12 +96,22 @@ export class UserService implements IUserService {
   }
 
   /** Signs the tokens for the given user and session. */
-  private signTokens(user: { id: string; username: string }, session: { sessionId: string }): ResultAsync<TokenPair, UserError> {
-    const accessToken = this.tokenService.create({ type: TokenType.Access, userId: user.id, username: user.username });
-    const refreshToken = this.tokenService.create({ type: TokenType.Refresh, sessionId: session.sessionId });
+  private signTokens(
+    user: { id: string; username: string },
+    session: { sessionId: string },
+  ): ResultAsync<TokenPair, UserError> {
+    const accessToken = this.tokenService.create({
+      type: TokenType.Access,
+      userId: user.id,
+      username: user.username,
+    });
+    const refreshToken = this.tokenService.create({
+      type: TokenType.Refresh,
+      sessionId: session.sessionId,
+    });
     return ResultAsync.combine([accessToken, refreshToken])
       .map(([accessToken, refreshToken]) => ({ accessToken, refreshToken }))
-      .mapErr((error) => UserError.create('SERVICE_FAILURE', { cause: error}));
+      .mapErr((error) => UserError.create("SERVICE_FAILURE", { cause: error }));
   }
 
   //================= Public methods ===================/
@@ -152,15 +163,17 @@ export class UserService implements IUserService {
         )
         // create the session
         .andThen((user) => {
-          return this.sessionService
-            // session expires when the refresh token expires
-            .findActiveOrCreate(user.id, { expiresIn: config.jwt.refreshToken.expiration })
-            .map((s) => ({ session: s, user }))
-            .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
+          return (
+            this.sessionService
+              // session expires when the refresh token expires
+              .findActiveOrCreate(user.id, { expiresIn: config.jwt.refreshToken.expiration })
+              .map((s) => ({ session: s, user }))
+              .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e }))
+          );
         })
         // sign session token
-        .andThen(({ session, user }) => this.signTokens(user, session)
-          .map((tokens) => ({ tokens, user: mapUserToDto(user) }))
+        .andThen(({ session, user }) =>
+          this.signTokens(user, session).map((tokens) => ({ tokens, user: mapUserToDto(user) })),
         )
     );
   }
@@ -168,45 +181,54 @@ export class UserService implements IUserService {
   logout(refreshToken: string): ResultAsync<void, UserError> {
     const thisService = this;
     return safeTry(async function* () {
-      const session = yield* thisService.sessionService.decode(refreshToken)
-        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
+      const session = yield* thisService.sessionService
+        .decode(refreshToken)
+        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e }));
       return thisService.sessionService
         .revoke(session.sessionId)
-        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e}));
-    })
-
+        .mapErr((e) => UserError.create("SERVICE_FAILURE", { cause: e }));
+    });
   }
 
-  list(): ResultAsync<UserDto[], UserError> {
-    return fromRepo(this.userRepo.selectAll()).map((users) => users.map(mapUserToDto));
+  list(page: PageArgs): ResultAsync<Page<UserDto>, UserError> {
+    return fromRepo(this.userRepo.selectAll(page)).map(({items, nextCursor}) => ({
+      items: items.map(mapUserToDto),
+      nextCursor,
+    }));
   }
 
   getById(userId: string): ResultAsync<UserDto, UserError> {
-    return fromRepo(this.userRepo.selectById(userId))
-      .andThen((user) => user.caseOf({
-        Nothing: () => errAsync(UserError.create('USER_NOT_FOUND')),
+    return fromRepo(this.userRepo.selectById(userId)).andThen((user) =>
+      user.caseOf({
+        Nothing: () => errAsync(UserError.create("USER_NOT_FOUND")),
         Just: (user) => okAsync(mapUserToDto(user)),
-      }))
+      }),
+    );
   }
 
   getByUsername(username: string): ResultAsync<UserDto, UserError> {
-    return fromRepo(this.userRepo.selectByUsername(username))
-      .andThen((user) => user.caseOf({
-        Nothing: () => errAsync(UserError.create('USER_NOT_FOUND')),
+    return fromRepo(this.userRepo.selectByUsername(username)).andThen((user) =>
+      user.caseOf({
+        Nothing: () => errAsync(UserError.create("USER_NOT_FOUND")),
         Just: (user) => okAsync(mapUserToDto(user)),
-      }))
+      }),
+    );
   }
 
   refresh(refreshToken: string): ResultAsync<TokenPair, UserError> {
     const this_ = this;
     return safeTry(async function* () {
-      const session = yield* this_.sessionService.decode(refreshToken)
-        .mapErr((error) => UserError.create('TOKEN_FAILURE', { cause: error }));
-      const newSession = yield* this_.sessionService.rotate(session, { expiresIn: config.jwt.refreshToken.expiration })
-        .mapErr((error) => UserError.create('SERVICE_FAILURE', {message: "failed to create new session", cause: error}));
+      const session = yield* this_.sessionService
+        .decode(refreshToken)
+        .mapErr((error) => UserError.create("TOKEN_FAILURE", { cause: error }));
+      const newSession = yield* this_.sessionService
+        .rotate(session, { expiresIn: config.jwt.refreshToken.expiration })
+        .mapErr((error) =>
+          UserError.create("SERVICE_FAILURE", { message: "failed to create new session", cause: error }),
+        );
       const user = yield* this_.getById(session.userId);
       const tokens = yield* this_.signTokens(user, newSession);
       return okAsync(tokens);
-    })
+    });
   }
 }

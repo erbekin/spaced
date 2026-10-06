@@ -2,12 +2,12 @@ import type { Handler } from "express";
 import z from "zod";
 import type { IUserService } from "../service";
 import { defineErrors, withPayload } from "../../../lib/api-error";
-import { USERNAME_REGEX } from "../username";
+import { usernameSchema } from "../username";
 
 const registerUserSchema = z.object({
   email: z.email(),
   password: z.string(),
-  username: z.string().min(3).max(48).regex(USERNAME_REGEX),
+  username: usernameSchema,
   name: z.string().optional(),
 });
 

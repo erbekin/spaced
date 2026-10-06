@@ -1,9 +1,12 @@
 import { type Application } from "express";
+import z from "zod";
 
 // username.ts
 export const USERNAME_REGEX = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 48;
+
+export const usernameSchema = z.string().min(3).max(48).regex(USERNAME_REGEX);
 
 export const normalizeUsername = (raw: string) => raw.trim().toLowerCase();
 
