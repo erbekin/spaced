@@ -2,10 +2,10 @@ import type { Handler } from "express";
 import type { ISpaceService } from "../service";
 import z from "zod";
 import { defineErrors, withPayload } from "../../../lib/api-error";
-
+import { slugSchema } from "../schema";
 const createSpaceSchema = z.object({
   name: z.string(),
-  slug: z.string().max(64, 'Slug must be at most 64 characters').lowercase('Slug must be lowercase'),
+  slug: slugSchema,
 });
 
 const CreateErrors = defineErrors("space::create", {

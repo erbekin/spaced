@@ -32,6 +32,7 @@ export type MinimalPostDto = {
 export type PostWithSpaceInfoDto = {
   id: string;
   title: string;
+  content: string;
   spaceId: string;
   createdAt: Date;
   updatedAt: Date;

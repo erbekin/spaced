@@ -2,12 +2,15 @@ import type { Handler } from "express";
 import type { ISpaceService } from "../service";
 import z from "zod";
 import { defineErrors } from "../../../lib/api-error";
+import { slugSchema } from "../schema";
 
 const updateSchema = z.object({
-  slug: z.string().max(64).optional(),
+  slug: slugSchema,
   name: z.string().optional(),
   homePostId: z.uuid().optional().nullable(),
-});
+}) .refine((data) => Boolean(data.slug || data.name || data.homePostId !== undefined), {
+  message: "At least one of 'slug' or 'name' or 'homePostId' is required.",
+});;
 
 const apiErrors = defineErrors('space::update', {
   INVALID_INPUT: { message: 'Invalid input', status: 400 },

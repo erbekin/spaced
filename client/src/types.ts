@@ -17,6 +17,14 @@ export type PaginatedResponse<T> = {
   nextCursor?: string;
 };
 
+export type Post = {
+  id: string;
+  title: string;
+  spaceId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AuthResponse = {
   tokens: {
     accessToken: string;

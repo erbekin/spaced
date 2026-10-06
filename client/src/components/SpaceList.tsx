@@ -49,12 +49,20 @@ export default function SpaceList() {
                 <span className="font-medium text-gray-900">{space.name}</span>
                 <span className="ml-2 text-sm italic text-gray-400">{space.slug}</span>
               </div>
-              <button
-                onClick={() => navigate(`/spaces/${space.slug}/edit`)}
-                className="text-xs text-gray-500 border border-gray-300 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
-              >
-                Edit
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate('/posts', { state: { space } })}
+                  className="text-xs text-gray-500 border border-gray-300 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
+                >
+                  View Posts
+                </button>
+                <button
+                  onClick={() => navigate(`/spaces/${space.slug}/edit`)}
+                  className="text-xs text-gray-500 border border-gray-300 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
             </li>
           ))}
         </ul>

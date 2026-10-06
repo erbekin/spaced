@@ -1,10 +1,14 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
 import AuthCard from './components/AuthCard';
 import SpaceList from './components/SpaceList';
 import CreateSpace from './components/CreateSpace';
+import EditSpace from './components/EditSpace';
+import PostsPage from './components/PostsPage';
+import CreatePost from './components/CreatePost';
+import AuthProvider from './components/AuthProvider';
 
 function AppRoutes() {
   const { token, user, handleLogin, handleLogout } = useAuth();
@@ -12,7 +16,7 @@ function AppRoutes() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar isLoggedIn={!!token} onLogout={handleLogout} />
-      <main className="flex-1 flex items-center justify-center p-6">
+      <main className="flex-1 flex items-start justify-center p-8 pt-10">
         <Routes>
           <Route
             path="/"
@@ -25,6 +29,18 @@ function AppRoutes() {
           <Route
             path="/spaces/new"
             element={token ? <CreateSpace /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/spaces/:slug/edit"
+            element={token && user ? <EditSpace /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/posts"
+            element={token && user ? <PostsPage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/posts/new"
+            element={token && user ? <CreatePost /> : <Navigate to="/" />}
           />
         </Routes>
       </main>

@@ -3,11 +3,11 @@ import type { IPostService } from "../service";
 import z from "zod";
 import { defineErrors, type ApiError } from "../../../lib/api-error";
 
+
 const createPostSchema = z.object({
   title: z.string(),
   content: z.string(),
 });
-
 const apiError = defineErrors('post::create', {
   INVALID_BODY: { message: "Invalid body", status: 400 },
 })

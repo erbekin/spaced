@@ -14,9 +14,14 @@ export default function Navbar({ isLoggedIn, onLogout }: NavbarProps) {
       <nav className="flex-1 px-6 py-4 flex justify-between items-center text-sm font-medium text-gray-600">
         <div className="flex gap-6">
           {isLoggedIn && (
-            <Link to="/spaces" className="hover:text-gray-900 transition-colors">
-              Spaces
-            </Link>
+            <>
+              <Link to="/spaces" className="hover:text-gray-900 transition-colors">
+                Spaces
+              </Link>
+              <Link to="/posts" className="hover:text-gray-900 transition-colors">
+                Posts
+              </Link>
+            </>
           )}
         </div>
         {isLoggedIn ? (
