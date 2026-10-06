@@ -7,6 +7,20 @@ export type Subscription = {
   userId: string;
   spaceId: string;
 };
+export type SubscriptionDetail = {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+    name: string | null;
+  };
+  space: {
+    id: string;
+    slug: string;
+    name: string;
+  };
+};
+
 
 export interface ISubscriptionService {
   /** Subscribe user to a space. */
@@ -23,6 +37,9 @@ export interface ISubscriptionService {
    * So, empty array means two things: space is not found or space has no subscribers.
    */
   getSubscribers(spaceId: string): ResultAsync<Subscription[], SubscriptionError>;
+
+  /** Get details of subscriptions by their IDs. */
+  getDetails(ids: string[]): ResultAsync<SubscriptionDetail[], SubscriptionError>;
 }
 
 //========== Implementation =================================================/
@@ -83,6 +100,35 @@ export class SubscriptionService implements ISubscriptionService {
         where: {
           spaceId,
         },
+      }),
+      (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
+    );
+  }
+  getDetails(ids: string[]): ResultAsync<SubscriptionDetail[], SubscriptionError> {
+    return ResultAsync.fromPromise(
+      prisma.subscription.findMany({
+        where: {
+          id: {
+            in: ids,
+          },
+        },
+        select: {
+          id: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+            }
+          },
+          space: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+            }
+          },
+        }
       }),
       (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
     );

@@ -5,9 +5,10 @@ import { Result } from "neverthrow";
 import { defineErrors } from "../../lib/api-error";
 import type { IUserService } from "../user/service";
 import type { ISpaceService } from "../space/service";
-import { slugSchema } from "../schema";
+import { slugSchema, uuidSchema } from "../schema";
 
-
+const DETAILS_QUERY_MAX_SUBSCRIPTION_IDS = 50;
+const DETAILS_BODY_MAX_SUBSCRIPTION_IDS = 500;
 
 const apiErrors = defineErrors("subscription", {
   INVALID_PARAMS: { message: "Invalid params", status: 400 },
@@ -129,7 +130,8 @@ export const ListSubscribersController =
     }
     const { username, spaceSlug } = parsed.value;
 
-    spaceService.get(username, spaceSlug)
+    spaceService
+      .get(username, spaceSlug)
       .map((space) => space.id)
       .andThen((spaceId) => {
         return subService.getSubscribers(spaceId);
@@ -142,4 +144,65 @@ export const ListSubscribersController =
           res.status(err.status).json(err);
         },
       );
+  };
+
+const idList = (max: number) =>
+  z
+    .array(uuidSchema)
+    .min(1, "At least one id is required")
+    .max(max, `Maximum ${max} ids allowed`)
+    .transform((ids) => [...new Set(ids)]);
+
+const detailsQuerySchema = z.object({
+  subid: z
+    .union([z.string(), z.array(z.string())])
+    .default([])
+    .transform((v) =>
+      (Array.isArray(v) ? v : [v])
+        .flatMap((s) => s.split(",")) // supports both styles
+        .map((s) => s.trim())
+        .filter(Boolean),
+    )
+    .pipe(idList(DETAILS_QUERY_MAX_SUBSCRIPTION_IDS)),
+});
+
+const detailsBodySchema = idList(DETAILS_BODY_MAX_SUBSCRIPTION_IDS);
+
+// Post uses body, get uses query
+export type GetDetailsMethod = "post" | "get";
+export const GetSubscriptionDetailsController =
+  (method: GetDetailsMethod, subService: ISubscriptionService): Handler =>
+  (req, res) => {
+    function getIds() {
+      switch (method) {
+        case "post":
+          return parseParams(detailsBodySchema)(req.body);
+        case "get":
+          return parseParams(detailsQuerySchema)(req.query).map((arr) => arr.subid);
+      }
+    }
+    const parsed = getIds();
+    if (parsed.isErr()) {
+      res.status(400).json(parsed.error);
+      return;
+    }
+    const ids = parsed.value;
+    res.set("Cache-Control", "no-cache");
+    subService.getDetails(ids).match(
+      (details) => {
+        // transform the result so that :
+        // "count" : number of found subscriptions
+        // "found" : list of found subscription details for the given ids
+        // "notFound" : list of subscription ids that were not found
+        const foundIds = new Set(details.map((d) => d.id));
+        res.json({
+          count: details.length,
+          found: details,
+          notFound: ids.filter((id) => !foundIds.has(id)),
+        });
+      },
+      (err) => {
+        res.status(err.status).json(err);
+      },
+    );
   };

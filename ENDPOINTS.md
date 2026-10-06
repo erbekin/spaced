@@ -267,3 +267,82 @@ Update a post. At least one of `title` or `content` must be provided.
 Delete a post by its ID.
 
 **Response** `204 No Content`
+
+## Subscriptions
+
+### `POST /subscriptions/subscribe/:username/:spaceSlug` 🔒
+Subscribe to a space.
+**Response** 200 - subscription created
+### `POST /subscriptions/unsubscribe/:username/:spaceSlug` 🔒
+Unsubscribe.
+
+### `GET /subscriptions/:username` 🔒
+Get list of subscriptions of user.  
+**Response** Array.
+```json
+[
+  {
+    id: string;
+    userId: string;
+    spaceId: string;
+  }
+]
+```
+
+### `GET /subscriptions/:username/spaces/:spaceSlug`
+Get list of subscriptions for a space owned by a user.
+**Response** Array.
+```json
+[
+  {
+    id: string;
+    userId: string;
+    spaceId: string;
+  }
+]
+```
+
+---
+
+### `GET /subscriptions/details`
+Get subscription details by subscription IDs.
+
+**Query**
+```
+subid=id1,id2,id3 OR
+subid=id1&subid=id2&subid=id3 OR
+subid[]=id1&subid[]=id2&subid[]=id3 OR
+subid[0]=id1&subid[1]=id2&subid[2]=id3
+e.g.
+GET /subscriptions/details?subid=63eb8aa4-be4e-43fa-a52d-ac2d4cdbffbe,63eb8aa4-be4e-43fa-a52d-ac2d4cdbffbe
+```
+Maximum number of subscription IDs: 50
+
+Duplicate subscription IDs are ignored.
+
+**Response** Array.
+```json
+[
+  "count": <number of found subscriptions>,
+  "found": [
+    {
+      "id": "id of subs",
+      "user": {
+        "id": "id of user",
+        "username": "...",
+        "name": "can be null",
+      },
+      "space": {
+        "id": "id of space",
+        "slug": "...",
+        "name": "..."
+      }
+    }
+  ],
+  "notFound": [<ids that were not found>]
+]
+```
+
+### `POST /subscriptions/details`
+Same as `GET /subscriptions/details`, but uses a JSON body.
+Maximum number of subscription IDs: 500

@@ -1,5 +1,6 @@
 import { Router, type Handler } from "express";
 import {
+  GetSubscriptionDetailsController,
   ListSubscribersController,
   ListSubscriptionsController,
   SubscribeController,
@@ -41,6 +42,11 @@ export default function createSubscriptionRouter(
   // list subscribers of a space
   // auth: no
   router.get("/:username/spaces/:spaceSlug", ListSubscribersController(subService, spaceService));
+
+  // get subscription details
+  // auth: no
+  router.get("/details", GetSubscriptionDetailsController('get', subService));
+  router.post("/details", GetSubscriptionDetailsController('post', subService));
 
   return router;
 }
