@@ -3,7 +3,7 @@ import { RegisterUserController } from "./controller/register";
 import { type IUserService } from "./service";
 import { ListUsersController } from "./controller/list";
 import { LoginUserController, AlreadyLoggedInMiddleware } from "./controller/login";
-import { MeUserController } from "./controller/me";
+import { MeHomePostController, MeSetHomePostController, MeUserController } from "./controller/me";
 import { TokenService } from "../auth/token/service";
 import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth";
 import { RefreshUserController } from "./controller/refresh";
@@ -44,6 +44,9 @@ export function createRouter(params: IUserRouterParams): Router {
   router.post('/refresh', RefreshUserController(params.userService))
   router.post('/logout', LogoutUserController(params.userService))
   router.get('/me', accessTokenAuthMiddleware, MeUserController(params.userService))
+  router.get('/me/home-post', accessTokenAuthMiddleware, MeHomePostController(params.userService))
+  router.post('/me/home-post', accessTokenAuthMiddleware, MeSetHomePostController(params.userService))
+
   return router;
 }
 

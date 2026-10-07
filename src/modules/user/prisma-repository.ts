@@ -4,7 +4,7 @@ import { handleKnownRequestErrorRes } from "../../lib/prisma-utils";
 import type { IUserInsertArgs, IUserRepository, IUserRepositoryError } from "./repository-interface";
 import { UserRepositoryErrorCode } from "./repository-interface";
 
-import type { UserEntity } from "./service";
+import type { HomePostEntity, HomePostUpdateDto, UserEntity } from "./service";
 import { Maybe } from "purify-ts";
 import type { Page, PageArgs } from "../../lib/pagination";
 
@@ -76,5 +76,27 @@ export class PrismaUserRepository implements IUserRepository {
       }),
       (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
     ).map(Maybe.fromNullable);
+  }
+  selectHomePost(userId: string): ResultAsync<Maybe<HomePostEntity>, IUserRepositoryError> {
+    return ResultAsync.fromPromise(
+      prisma.homePost.findUnique({
+        where: { userId },
+      }),
+      (e) => new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", e),
+    ).map(Maybe.fromNullable);
+  }
+  upsertHomePost(userId: string, dto: HomePostUpdateDto): ResultAsync<void, IUserRepositoryError> {
+    return handleKnownRequestErrorRes('2003', () => prisma.homePost.upsert({
+      create: { userId, ...dto },
+      update: dto,
+      where: { userId },
+    })).mapErr((errInfo) => {
+      switch (errInfo.status) {
+        case 'caught-known':
+          return new UserRepositoryError(UserRepositoryErrorCode.ForeignKeyViolation, "foreign key violated: user_id invalid", errInfo.error);
+        default:
+          return new UserRepositoryError(UserRepositoryErrorCode.Unknown, "other error", errInfo.error);
+      }
+    }).map(() => undefined)
   }
 }

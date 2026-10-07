@@ -24,13 +24,31 @@ Hello, World!
 ## Users `/users`
 
 ### `GET /users/list`
-List all users.
+List all users using cursor-based pagination.
+Here is user dto:
+```typescript
+type UserDto = {
+    id: string;
+    username: string;
+    email: string;
+    name: string | null;
+    createdAt: Date;
+}
+```
+**Query params**
+
+| Param | Type | Default | Max |
+|---|---|---|---|
+| `limit` | number | 20 | 100 |
+| `cursor` | UUID | — | — |
 
 **Response** `200`
 ```json
-[{ "id": "...", "username": "...", "name": "...", "email": "..." }]
+{
+  "items": [{ "id": "...", "username": "...", "email": "...", "name": "...", "createdAt": "..." }],
+  "nextCursor": "..."
+}
 ```
-
 ---
 
 ### `POST /users/register`
@@ -119,6 +137,37 @@ Get the currently authenticated user.
 ```
 
 ---
+
+### `GET /users/me/home-post` 🔒
+Get the home post of the currently authenticated user.
+
+**Response** `200`
+Returns HomePostDto.
+```ts
+type HomePostDto = {
+    homePost: {
+        content: string;
+        createdAt: Date;
+    } | null;
+}
+```
+
+---
+
+### `POST /users/me/home-post` 🔒
+Create or update the home post of the currently authenticated user.
+
+**Body**
+```ts
+type HomePostUpdateDto = {
+    content: string;
+}
+```
+**Response** `200` or `201`
+```json
+{ "message": "updated|created successfully" }
+```
+
 
 ## Spaces `/spaces`
 

@@ -8,6 +8,8 @@ import CreateSpace from './components/CreateSpace';
 import EditSpace from './components/EditSpace';
 import PostsPage from './components/PostsPage';
 import CreatePost from './components/CreatePost';
+import HomePage from './components/HomePage';
+import EditHomePost from './components/EditHomePost';
 import AuthProvider from './components/AuthProvider';
 
 function AppRoutes() {
@@ -15,7 +17,7 @@ function AppRoutes() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isLoggedIn={!!token} onLogout={handleLogout} />
+      <Navbar isLoggedIn={!!token} onLogout={handleLogout} username={user?.username ?? null} />
       <main className="flex-1 flex items-start justify-center p-8 pt-10">
         <Routes>
           <Route
@@ -41,6 +43,14 @@ function AppRoutes() {
           <Route
             path="/posts/new"
             element={token && user ? <CreatePost /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/home/:username"
+            element={token && user ? <HomePage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/home/:username/edit"
+            element={token && user ? <EditHomePost /> : <Navigate to="/" />}
           />
         </Routes>
       </main>

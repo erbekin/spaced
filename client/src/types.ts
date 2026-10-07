@@ -25,6 +25,13 @@ export type Post = {
   updatedAt: string;
 };
 
+export type HomePostDto = {
+  homePost: {
+    content: string;
+    createdAt: string;
+  } | null;
+};
+
 export type AuthResponse = {
   tokens: {
     accessToken: string;

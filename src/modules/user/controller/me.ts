@@ -24,3 +24,41 @@ export const MeUserController =
           },
         );
     };
+
+export const MeHomePostController =
+  (userService: IUserService): Handler =>
+    (req, res) => {
+      const accessToken = res.locals.accessToken;
+      if (!accessToken) {
+        const error = MeError.create('UNAUTHORIZED');
+        return res.status(error.status).json(error);
+      }
+      userService.getHomePost(accessToken.userId)
+        .match(
+          (homePost) => {
+            res.json(homePost);
+          },
+          (error) => {
+            res.status(error.status).json(error);
+          },
+        );
+    };
+
+export const MeSetHomePostController =
+  (userService: IUserService): Handler =>
+    (req, res) => {
+      const accessToken = res.locals.accessToken;
+      if (!accessToken) {
+        const error = MeError.create('UNAUTHORIZED');
+        return res.status(error.status).json(error);
+      }
+      userService.setHomePost(accessToken.userId, req.body)
+        .match(
+          () => {
+            res.sendStatus(200);
+          },
+          (error) => {
+            res.status(error.status).json(error);
+          },
+        );
+    };

@@ -23,7 +23,8 @@ model User {
   spaces      Space[]
   // abone olunan spaces
   subscriptions Subscription[] @relation("UserSubscriptions")
-
+  // home post
+  homePost HomePost? @relation("UserHomePosts")
   @@map("users")
 }
 
@@ -98,4 +99,15 @@ model Subscription {
   user      User    @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
   space     Space   @relation("SpaceSubscriptions", fields: [spaceId], references: [id], onDelete: Cascade)
   @@map("subscriptions")
+}
+
+model HomePost {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String  @unique  @db.Uuid @map("user_id")
+
+  content   String
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user      User    @relation("UserHomePosts", fields: [userId], references: [id], onDelete: Cascade)
 }

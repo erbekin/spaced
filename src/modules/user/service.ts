@@ -7,6 +7,7 @@ import { config } from "../config";
 import { TokenType, type ITokenService } from "../auth/token/service";
 import type { AppError } from "../../lib/error-module";
 import type { Page, PageArgs } from "../../lib/pagination";
+import type { get } from "node:http";
 
 export type UserEntity = {
   id: string;
@@ -56,14 +57,41 @@ export type LoggedInUserDto = {
   user: UserDto;
 };
 
+export type UserNameDto = {
+  id: string;
+  username: string;
+  name: string | null;
+};
+
+export type HomePostEntity = {
+  id: string;
+  userId: string;
+  content: string;
+  createdAt: Date;
+};
+
+export type HomePostDto = {
+  homePost: {
+    content: string;
+    createdAt: Date;
+  } | null
+};
+
+export type HomePostUpdateDto = {
+  content: string;
+};
+
+
 export interface IUserService {
   register(dto: RegisterUserDto): ResultAsync<UserDto, UserError>;
   login(dto: LoginDto): ResultAsync<LoggedInUserDto, UserError>;
   logout(refreshToken: string): ResultAsync<void, AppError>;
-  list(page: PageArgs): ResultAsync<Page<UserDto>, UserError>;
+  list(page: PageArgs): ResultAsync<Page<UserNameDto>, UserError>;
   getById(userId: string): ResultAsync<UserDto, UserError>;
   getByUsername(username: string): ResultAsync<UserDto, UserError>;
   refresh(refreshToken: string): ResultAsync<TokenPair, UserError>;
+  getHomePost(userId: string): ResultAsync<HomePostDto, UserError>;
+  setHomePost(userId: string, dto: HomePostUpdateDto): ResultAsync<void, UserError>;
 }
 
 //================= The user service implementation ==========/
@@ -136,6 +164,7 @@ export class UserService implements IUserService {
                   return UserError.create("USER_ALREADY_EXISTS", {
                     message: "Username or email already exists",
                   });
+                case UserRepositoryErrorCode.ForeignKeyViolation:
                 case UserRepositoryErrorCode.Unknown:
                   return UserError.create("STORAGE_FAILURE", { cause: e.cause });
               }
@@ -230,5 +259,24 @@ export class UserService implements IUserService {
       const tokens = yield* this_.signTokens(user, newSession);
       return okAsync(tokens);
     });
+  }
+  getHomePost(userId: string): ResultAsync<HomePostDto, UserError> {
+    return fromRepo(this.userRepo.selectHomePost(userId)).map((homePost) => ({
+      homePost: homePost.map((post) => ({
+        content: post.content,
+        createdAt: post.createdAt,
+      })).extractNullable(),
+    }));
+  }
+  setHomePost(userId: string, dto: HomePostUpdateDto): ResultAsync<void, UserError> {
+    return this.userRepo.upsertHomePost(userId, dto)
+      .mapErr((error) => {
+        switch (error.code) {
+          case UserRepositoryErrorCode.ForeignKeyViolation:
+            return UserError.create('USER_NOT_FOUND', { cause: error.cause, status: 400 });
+          default:
+            return UserError.create('SERVICE_FAILURE', { cause: error });
+        }
+      })
   }
 }
