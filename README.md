@@ -22,6 +22,10 @@ bun dev
 This launches the development server for the react client.
 
 ## Overview
+
+![Screenshot](assets/ss1.png)
+
+
 ### Server
 Server code is located in the `src` directory.  
 **src/lib**: utilities and shared code. e.g. error handling, prisma client instance  
