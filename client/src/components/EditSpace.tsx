@@ -24,6 +24,7 @@ export default function EditSpace() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user || !slug) return;
@@ -72,6 +73,26 @@ export default function EditSpace() {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/spaces/${slug}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to delete space');
+      }
+      navigate('/spaces');
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : 'Something went wrong');
+      setDeleting(false);
     }
   };
 
@@ -131,10 +152,21 @@ export default function EditSpace() {
           </button>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || deleting}
             className="flex-1 bg-gray-900 text-white py-2 text-sm font-semibold rounded hover:bg-black transition-colors disabled:opacity-50"
           >
             {submitting ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+
+        <div className="pt-6 border-t border-gray-200 mt-4">
+          <button
+            type="button"
+            disabled={deleting || submitting}
+            onClick={handleDelete}
+            className="w-full border border-red-300 text-red-600 py-2 text-sm font-semibold rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+          >
+            {deleting ? 'Deleting...' : 'Delete Space'}
           </button>
         </div>
       </form>
