@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 import type { HomePostDto } from '../types';
 
 export default function EditHomePost() {
-  const { token } = useAuth();
+  const authFetch = useAuthFetch();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
@@ -17,17 +17,14 @@ export default function EditHomePost() {
 
   // Pre-fill with existing content if updating
   useEffect(() => {
-    fetch('/api/users/me/home-post', {
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: 'include',
-    })
+    authFetch('/api/users/me/home-post')
       .then((res) => res.json() as Promise<HomePostDto>)
       .then((data) => {
         if (data.homePost) setContent(data.homePost.content);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [authFetch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +32,9 @@ export default function EditHomePost() {
     setSubmitting(true);
 
     try {
-      const res = await fetch('/api/users/me/home-post', {
+      const res = await authFetch('/api/users/me/home-post', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
 

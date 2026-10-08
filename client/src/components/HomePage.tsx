@@ -3,12 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 import type { HomePostDto } from '../types';
 
 type HomePost = NonNullable<HomePostDto['homePost']>;
 
 export default function HomePage() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const authFetch = useAuthFetch();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
@@ -18,12 +20,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(isOwnProfile);
 
   useEffect(() => {
-    if (!token || !isOwnProfile) return;
+    if (!isOwnProfile) return;
 
-    fetch('/api/users/me/home-post', {
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: 'include',
-    })
+    authFetch('/api/users/me/home-post')
       .then((res) => {
         if (!res.ok) throw new Error();
         return res.json() as Promise<HomePostDto>;
@@ -31,7 +30,7 @@ export default function HomePage() {
       .then((data) => setHomePost(data.homePost))
       .catch(() => setHomePost(null))
       .finally(() => setLoading(false));
-  }, [token, isOwnProfile]);
+  }, [authFetch, isOwnProfile]);
 
   if (!isOwnProfile) {
     return (

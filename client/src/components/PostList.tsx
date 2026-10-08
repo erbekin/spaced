@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 import { type Post, type PaginatedResponse, type Space } from '../types';
 
 type PostListProps = {
@@ -13,7 +13,7 @@ function dateTimeLocal(date: string): string {
 }
 
 export default function PostList({ username, space }: PostListProps) {
-  const { token } = useAuth();
+  const authFetch = useAuthFetch();
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
@@ -23,10 +23,7 @@ export default function PostList({ username, space }: PostListProps) {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`/api/posts/${username}/${space.slug}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: 'include',
-    })
+    authFetch(`/api/posts/${username}/${space.slug}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch posts');
         return res.json() as Promise<PaginatedResponse<Post>>;
@@ -45,7 +42,7 @@ export default function PostList({ username, space }: PostListProps) {
       });
 
     return () => { cancelled = true; };
-  }, [username, space.slug, token]);
+  }, [username, space.slug, authFetch]);
 
   const handleLoadMore = async () => {
     if (!nextCursor) return;
@@ -53,10 +50,7 @@ export default function PostList({ username, space }: PostListProps) {
     try {
       const url = new URL(`/api/posts/${username}/${space.slug}`, window.location.origin);
       url.searchParams.set('cursor', nextCursor);
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include',
-      });
+      const res = await authFetch(url.toString());
       if (!res.ok) throw new Error('Failed to fetch more posts');
       const data: PaginatedResponse<Post> = await res.json();
       setPosts((prev) => [...prev, ...data.items]);

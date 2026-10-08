@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 
 export default function CreateSpace() {
-  const { token } = useAuth();
+  const authFetch = useAuthFetch();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -16,13 +16,9 @@ export default function CreateSpace() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/spaces', {
+      const res = await authFetch('/api/spaces', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug }),
       });
 

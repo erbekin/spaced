@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 
 type SpaceDetail = {
   id: string;
@@ -14,7 +15,8 @@ type SpaceDetail = {
  * Displays error message at the top of the form.
  */
 export default function EditSpace() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const authFetch = useAuthFetch();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
@@ -31,10 +33,7 @@ export default function EditSpace() {
 
     const fetchSpace = async () => {
       try {
-        const res = await fetch(`/api/spaces/${user.username}/${slug}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: 'include',
-        });
+        const res = await authFetch(`/api/spaces/${user.username}/${slug}`);
         if (!res.ok) throw new Error('Space not found');
         const data: SpaceDetail = await res.json();
         setName(data.name);
@@ -47,7 +46,7 @@ export default function EditSpace() {
     };
 
     fetchSpace();
-  }, [user, slug, token]);
+  }, [user, slug, authFetch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,13 +54,9 @@ export default function EditSpace() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`/api/spaces/${slug}`, {
+      const res = await authFetch(`/api/spaces/${slug}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug: newSlug }),
       });
 
@@ -80,11 +75,7 @@ export default function EditSpace() {
     if (!window.confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/spaces/${slug}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include',
-      });
+      const res = await authFetch(`/api/spaces/${slug}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to delete space');

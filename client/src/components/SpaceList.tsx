@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 import { type Space, type PaginatedResponse } from '../types';
 
 export default function SpaceList() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const authFetch = useAuthFetch();
   const navigate = useNavigate();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,10 +17,7 @@ export default function SpaceList() {
 
     const fetchSpaces = async () => {
       try {
-        const res = await fetch(`/api/spaces/${user.username}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: 'include',
-        });
+        const res = await authFetch(`/api/spaces/${user.username}`);
         if (!res.ok) throw new Error('Failed to fetch spaces');
         const data: PaginatedResponse<Space> = await res.json();
         setSpaces(data.items ?? []);
@@ -30,7 +29,7 @@ export default function SpaceList() {
     };
 
     fetchSpaces();
-  }, [user, token]);
+  }, [user, authFetch]);
 
   if (loading) return <p className="text-gray-500 text-sm">Loading...</p>;
   if (error) return <p className="text-red-500 text-sm">{error}</p>;

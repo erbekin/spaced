@@ -3,12 +3,14 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 import type { Space } from '../types';
 
 type LocationState = { space?: Space };
 
 export default function CreatePost() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const authFetch = useAuthFetch();
   const navigate = useNavigate();
   const location = useLocation();
   const space = (location.state as LocationState | null)?.space;
@@ -28,13 +30,9 @@ export default function CreatePost() {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/posts/${user.username}/${space.slug}`, {
+      const res = await authFetch(`/api/posts/${user.username}/${space.slug}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content }),
       });
 

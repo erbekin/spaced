@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAuthFetch } from '../hooks/useAuthFetch';
 import { type Space, type PaginatedResponse } from '../types';
 import SpaceSelector from './SpaceSelector';
 import PostList from './PostList';
@@ -8,7 +9,8 @@ import PostList from './PostList';
 type LocationState = { space?: Space };
 
 export default function PostsPage() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const authFetch = useAuthFetch();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,10 +25,7 @@ export default function PostsPage() {
   useEffect(() => {
     if (!user) return;
 
-    fetch(`/api/spaces/${user.username}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: 'include',
-    })
+    authFetch(`/api/spaces/${user.username}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch spaces');
         return res.json() as Promise<PaginatedResponse<Space>>;
@@ -34,7 +33,7 @@ export default function PostsPage() {
       .then((data) => setSpaces(data.items ?? []))
       .catch(() => {})
       .finally(() => setLoadingSpaces(false));
-  }, [user, token]);
+  }, [user, authFetch]);
 
   const handleCreatePost = () => {
     if (!currentSpace) return;
