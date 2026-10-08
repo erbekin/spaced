@@ -22,6 +22,9 @@ export default function EditSpace() {
 
   const [name, setName] = useState('');
   const [newSlug, setNewSlug] = useState('');
+  // Copilot: keep original values to detect unchanged submissions.
+  const [originalName, setOriginalName] = useState('');
+  const [originalSlug, setOriginalSlug] = useState('');
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +41,9 @@ export default function EditSpace() {
         const data: SpaceDetail = await res.json();
         setName(data.name);
         setNewSlug(data.slug);
+        // Copilot: preserve fetched values as baseline for change detection.
+        setOriginalName(data.name);
+        setOriginalSlug(data.slug);
       } catch (err: unknown) {
         setFetchError(err instanceof Error ? err.message : 'Failed to load space');
       } finally {
@@ -48,9 +54,16 @@ export default function EditSpace() {
     fetchSpace();
   }, [user, slug, authFetch]);
 
+  // Copilot: allow submit only after name or slug actually changes.
+  const hasChanges = name !== originalName || newSlug !== originalSlug;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+    if (!hasChanges) {
+      setSubmitError('No changes to save.');
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -143,12 +156,15 @@ export default function EditSpace() {
           </button>
           <button
             type="submit"
-            disabled={submitting || deleting}
+            disabled={submitting || deleting || !hasChanges}
             className="flex-1 bg-gray-900 text-white py-2 text-sm font-semibold rounded hover:bg-black transition-colors disabled:opacity-50"
           >
             {submitting ? 'Saving...' : 'Save'}
           </button>
         </div>
+        {!hasChanges && (
+          <p className="text-xs text-gray-500">No changes made yet.</p>
+        )}
 
         <div className="pt-6 border-t border-gray-200 mt-4">
           <button
