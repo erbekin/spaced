@@ -1,15 +1,24 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Wraps fetch with automatic JWT handling:
- * - Injects Authorization header on every request.
- * - On 401, attempts a silent token refresh via POST /api/users/refresh.
- * - Retries the original request with the new token on success.
- * - Logs the user out if the refresh fails.
- */
+// Module-level lock shared by all simultaneous requests
+let activeRefreshPromise: Promise<string | null> | null = null;
+
 export function useAuthFetch() {
   const { token, user, handleLogin, handleLogout } = useAuth();
+
+  // Keep mutable references to prevent recreating authFetch when state updates
+  const tokenRef = useRef(token);
+  const userRef = useRef(user);
+  const handleLoginRef = useRef(handleLogin);
+  const handleLogoutRef = useRef(handleLogout);
+
+  useEffect(() => {
+    tokenRef.current = token;
+    userRef.current = user;
+    handleLoginRef.current = handleLogin;
+    handleLogoutRef.current = handleLogout;
+  });
 
   const authFetch = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -23,32 +32,49 @@ export function useAuthFetch() {
           },
         });
 
-      const res = await makeRequest(token);
+      // 1. Initial attempt
+      const res = await makeRequest(tokenRef.current);
       if (res.status !== 401) return res;
 
-      // Attempt a silent token refresh
-      const refreshRes = await fetch('/api/users/refresh', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      // 2. Concurrency-safe token refresh
+      if (!activeRefreshPromise) {
+        activeRefreshPromise = (async () => {
+          try {
+            const refreshRes = await fetch('/api/users/refresh', {
+              method: 'POST',
+              credentials: 'include',
+            });
 
-      if (!refreshRes.ok) {
-        // Refresh failed — session is dead, log out
-        await handleLogout();
-        return res;
+            if (!refreshRes.ok) {
+              await handleLogoutRef.current();
+              return null;
+            }
+
+            const { accessToken: newToken } = (await refreshRes.json()) as {
+              accessToken: string;
+            };
+
+            if (userRef.current) {
+              handleLoginRef.current(newToken, userRef.current);
+            }
+            tokenRef.current = newToken;
+            return newToken;
+          } catch {
+            await handleLogoutRef.current();
+            return null;
+          } finally {
+            activeRefreshPromise = null;
+          }
+        })();
       }
 
-      const { accessToken: newToken } = (await refreshRes.json()) as {
-        accessToken: string;
-      };
+      const freshToken = await activeRefreshPromise;
+      if (!freshToken) return res;
 
-      // Persist the new token in context so future calls use it
-      if (user) handleLogin(newToken, user);
-
-      // Retry the original request with the new token
-      return makeRequest(newToken);
+      // 3. Retry original request with newly acquired token
+      return makeRequest(freshToken);
     },
-    [token, user, handleLogin, handleLogout],
+    [] // Stable reference across renders
   );
 
   return authFetch;

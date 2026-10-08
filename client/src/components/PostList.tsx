@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useAuthFetch } from '../hooks/useAuthFetch';
 import { type Post, type PaginatedResponse, type Space } from '../types';
+import { useNavigate } from 'react-router-dom';
+import { dateTimeLocal } from '../utils';
 
 type PostListProps = {
   username: string;
   space: Space;
 };
 
-function dateTimeLocal(date: string): string {
-  const dateObj = new Date(date);
-  return `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}`;
-}
+
 
 export default function PostList({ username, space }: PostListProps) {
   const authFetch = useAuthFetch();
@@ -19,7 +18,7 @@ export default function PostList({ username, space }: PostListProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     let cancelled = false;
 
@@ -74,11 +73,23 @@ export default function PostList({ username, space }: PostListProps) {
             <p className="text-gray-500 text-sm m-1.5">Found {posts.length} post{posts.length !== 1 ? 's' : ''}.</p>
             <ul className="border border-gray-200 rounded divide-y divide-gray-200">
               {posts.map((post) => (
-                <li key={post.id} className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{post.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {dateTimeLocal(post.createdAt)}
-                  </p>
+                <li
+                  key={post.id}
+                  className="px-4 py-3 flex items-center justify-between gap-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 truncate">{post.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {dateTimeLocal(post.createdAt)}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => navigate(`/posts/view/${post.id}`)}
+                    className="text-xs text-gray-500 border border-gray-300 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
+                  >
+                    View
+                  </button>
                 </li>
               ))}
             </ul>

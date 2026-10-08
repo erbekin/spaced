@@ -39,3 +39,21 @@ export type AuthResponse = {
   };
   user: User;
 };
+
+export type PostWithSpaceInfo = {
+  id: string;
+  title: string;
+  content: string;
+  spaceId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  space: {
+    id: string;
+    slug: string;
+    owner: {
+      id: string;
+      name: string | null;
+      username: string;
+    };
+  };
+};

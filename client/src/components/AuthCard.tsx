@@ -133,6 +133,7 @@ export default function AuthCard({ onLogin }: AuthCardProps) {
           <input
             type="text"
             required
+            autoComplete='username'
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="johndoe"
@@ -145,6 +146,7 @@ export default function AuthCard({ onLogin }: AuthCardProps) {
           <input
             type="password"
             required
+            autoComplete='current-password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-
+import Logo from './Logo';
 type NavbarProps = {
   isLoggedIn: boolean;
   onLogout: () => void;
@@ -10,7 +10,7 @@ export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) 
   return (
     <header className="flex items-center border-b border-gray-300 bg-white">
       <div className="w-48 px-6 py-4 border-r border-gray-300 font-bold tracking-wider text-xl">
-        <Link to="/">SPACED</Link>
+        <Logo />
       </div>
       <nav className="flex-1 px-6 py-4 flex justify-between items-center text-sm font-medium text-gray-600">
         <div className="flex gap-6">

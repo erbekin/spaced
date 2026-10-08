@@ -11,9 +11,9 @@ export interface SessionErrors {
 export type SessionError = ErrorModule<SessionErrors>;
 
 export const SessionError = makeErrorFactory<SessionError>('auth::session', {
-  INVALID_EXPIRY: { message: 'Invalid session expiry' },
-  NOT_FOUND: { message: 'Session not found' },
-  USER_NOT_FOUND: { message: 'User not found' },
+  INVALID_EXPIRY: { message: 'Invalid session expiry', status: 400 },
+  NOT_FOUND: { message: 'Session not found', status: 404 },
+  USER_NOT_FOUND: { message: 'User not found', status: 404 },
   STORAGE_FAILURE: { message: 'Session storage failure' },
   SERVICE_FAILURE: { message: 'Service failure' },
 });

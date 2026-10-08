@@ -11,6 +11,7 @@ import CreatePost from './components/CreatePost';
 import HomePage from './components/HomePage';
 import EditHomePost from './components/EditHomePost';
 import AuthProvider from './components/AuthProvider';
+import PostView from './components/PostView';
 
 function AppRoutes() {
   const { token, user, handleLogin, handleLogout } = useAuth();
@@ -43,6 +44,10 @@ function AppRoutes() {
           <Route
             path="/posts/new"
             element={token && user ? <CreatePost /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/posts/view/:postId"
+            element={<PostView />}
           />
           <Route
             path="/home/:username"
