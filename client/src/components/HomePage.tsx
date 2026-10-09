@@ -10,6 +10,7 @@ type HomePost = NonNullable<HomePostDto['homePost']>;
 
 export default function HomePage() {
   const { user } = useAuth();
+  console.log("user", user)
   const authFetch = useAuthFetch();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
