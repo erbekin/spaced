@@ -12,6 +12,7 @@ import HomePage from './components/HomePage';
 import EditHomePost from './components/EditHomePost';
 import AuthProvider from './components/AuthProvider';
 import PostView from './components/PostView';
+import NotFound from './components/NotFound';
 
 function AppRoutes() {
   const { token, user, handleLogin, handleLogout } = useAuth();
@@ -57,6 +58,8 @@ function AppRoutes() {
             path="/home/:username/edit"
             element={token && user ? <EditHomePost /> : <Navigate to="/" />}
           />
+          // NotFound
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>
