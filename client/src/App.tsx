@@ -16,6 +16,7 @@ import LoginPage from './components/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicSpacePage from './components/PublicSpacePage';
 import EditSpaceHomePost from './components/EditSpaceHomePost';
+import Watchspace from './components/Watchspace';
 
 function AppRoutes() {
   const { token, user, handleLogout } = useAuth();
@@ -34,6 +35,12 @@ function AppRoutes() {
             path="/posts/view/:postId"
             element={<PostView />}
           />
+
+          <Route
+            path="/watchspace"
+            element={<Watchspace />}
+          />
+
           <Route path="/home/:username" element={<HomePage />} />
           <Route path="/home/:username/spaces" element={<SpaceList />} />
           <Route path="/home/:username/spaces/:spaceSlug" element={<PublicSpacePage />} />
