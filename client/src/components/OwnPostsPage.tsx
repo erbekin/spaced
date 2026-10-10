@@ -8,7 +8,7 @@ import PostList from './PostList';
 
 type LocationState = { space?: Space };
 
-export default function PostsPage() {
+export default function OwnPostsPage() {
   const { user } = useAuth();
   const authFetch = useAuthFetch();
   const navigate = useNavigate();

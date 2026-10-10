@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard';
 import SpaceList from './components/SpaceList';
 import CreateSpace from './components/CreateSpace';
 import EditSpace from './components/EditSpace';
-import PostsPage from './components/PostsPage';
+import OwnPostsPage from './components/OwnPostsPage';
 import CreatePost from './components/CreatePost';
 import HomePage from './components/HomePage';
 import EditHomePost from './components/EditHomePost';
@@ -38,7 +38,7 @@ function AppRoutes() {
             <Route path="/home/:username/spaces" element={<SpaceList />} />
             <Route path="/spaces/new" element={<CreateSpace />} />
             <Route path="/spaces/:slug/edit" element={<EditSpace />} />
-            <Route path="/posts" element={<PostsPage />} />
+            <Route path="/posts" element={<OwnPostsPage />} />
             <Route path="/posts/new" element={<CreatePost />} />
             <Route path="/home/:username/edit" element={<EditHomePost />} />
           </Route>
