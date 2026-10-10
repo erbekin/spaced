@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '../context/AuthContext';
@@ -71,6 +71,14 @@ export default function HomePage() {
       {/* Profile Card */}
       <div className="border border-gray-200 rounded-lg bg-white p-6 shadow-sm">
         <div className="flex items-start justify-between">
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <Link
+              to={`/home/${profileUser.username}/spaces`}
+              className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-black transition-colors"
+            >
+              View spaces <span aria-hidden="true">→</span>
+            </Link>
+          </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">
               @{profileUser.username}
