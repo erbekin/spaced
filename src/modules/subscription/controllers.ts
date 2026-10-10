@@ -88,7 +88,7 @@ export const ListSubscriptionsController =
   (subService: ISubscriptionService, userService: IUserService): Handler =>
   (req, res) => {
     const { username } = req.params;
-    const parsed = parseParams(z.uuidv4())(username);
+    const parsed = parseParams(uuidSchema)(username);
     if (parsed.isErr()) {
       res.status(400).json(parsed.error);
       return;
@@ -111,8 +111,8 @@ export const ListSubscriptionsController =
         return subService.getSubscriptions(userId);
       })
       .match(
-        (sub) => {
-          res.json(sub);
+        (subs) => {
+          res.json(subs);
         },
         (err) => {
           res.status(err.status).json(err);

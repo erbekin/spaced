@@ -1,10 +1,21 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import Logo from './Logo';
+import GoToUserHome from './GoToUserHome';
 type NavbarProps = {
   isLoggedIn: boolean;
   onLogout: () => void;
   username: string | null;
 };
+
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  [
+    "text-sm font-medium tracking-tight text-black",
+    "border-b-2 pb-0.5 transition-colors",
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2",
+    isActive
+      ? "border-black"
+      : "border-transparent hover:border-black",
+  ].join(" ");
 
 export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) {
   return (
@@ -16,20 +27,21 @@ export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) 
         <div className="flex gap-6">
           {isLoggedIn && username && (
             <>
-              <Link to={`/home/${username}`} className="hover:text-gray-900 transition-colors">
+              <NavLink to={`/home/${username}`} className={linkClass}>
                 Home
-              </Link>
-              <Link to="/spaces" className="hover:text-gray-900 transition-colors">
+              </NavLink>
+              <NavLink to="/spaces" className={linkClass}>
                 Spaces
-              </Link>
-              <Link to="/posts" className="hover:text-gray-900 transition-colors">
+              </NavLink>
+              <NavLink to="/posts" className={linkClass}>
                 Posts
-              </Link>
+              </NavLink>
+              <GoToUserHome />
             </>
           )}
         </div>
         {isLoggedIn ? (
-          <button onClick={onLogout} className="text-red-600 hover:text-red-800 transition-colors">
+          <button onClick={onLogout} className="px-4 py-1.5 text-sm font-semibold text-white bg-red-700 hover:bg-yellow-700 rounded-md transition-colors">
             Log out
           </button>
         ) : (

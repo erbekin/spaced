@@ -39,3 +39,32 @@ export const GetUserHome =
       (err) => res.status(err.status).json(err),
     );
   };
+
+export const CheckUsername =
+  (userService: IUserService): Handler =>
+  (req, res) => {
+    const result = usernameSchema.safeParse(req.params.username);
+    if (!result.success) {
+      return apiErrors.use("INVALID_USERNAME")((err) =>
+        res.status(err.status).json(err),
+      );
+    }
+    const username = result.data;
+
+    safeTry(async function* () {
+      const user = yield* userService.getByUsername(username);
+      return okAsync({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+      });
+    }).match(
+      (data) => res.json({ found: true, user: data }),
+      (err) => {
+        if (err.code === 'USER_NOT_FOUND') {
+          return res.json({ found: false, user: null });
+        }
+        res.status(err.status).json(err);
+      },
+    );
+  };

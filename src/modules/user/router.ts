@@ -9,7 +9,7 @@ import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth"
 import { RefreshUserController } from "./controller/refresh";
 import { LogoutUserController } from "./controller/logout";
 import type { ISessionService } from "../auth/session/service";
-import { GetUserHome } from "./controller/info";
+import { GetUserHome, CheckUsername } from "./controller/info";
 
 
 
@@ -50,6 +50,8 @@ export function createRouter(params: IUserRouterParams): Router {
 
   // public
   router.get('/homes/:username', GetUserHome(params.userService))
+  router.get('/check-username/:username', CheckUsername(params.userService))
+
   return router;
 }
 
