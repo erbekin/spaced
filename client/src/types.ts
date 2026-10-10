@@ -66,3 +66,29 @@ export type UserHomeInfo = {
   };
   homePost: HomePostDto['homePost']
 };
+
+export type SpaceEntity = {
+    id: string;
+    name: string;
+    slug: string;
+    ownerId: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+
+export type SpaceHomePostDto = {
+    spaceId: string;
+    content: string;
+    createdAt: string;
+}
+
+
+export type SpaceEntityEx = SpaceEntity & {
+    owner: {
+        id: string;
+        username: string;
+        name: string | null;
+    };
+    spaceHomePost: HomePostDto['homePost'];
+}

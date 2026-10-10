@@ -56,7 +56,7 @@ export default function PostView() {
             </Link>
             <span className="text-gray-400">/</span>
             <Link
-              to={`/${post.space.owner.username}/${post.space.slug}`}
+              to={`/home/${post.space.owner.username}/spaces/${post.space.slug}`}
               className="hover:text-gray-900 transition-colors font-medium"
             >
               {post.space.slug}

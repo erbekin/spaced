@@ -14,6 +14,8 @@ import PostView from './components/PostView';
 import NotFound from './components/NotFound';
 import LoginPage from './components/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicSpacePage from './components/PublicSpacePage';
+import EditSpaceHomePost from './components/EditSpaceHomePost';
 
 function AppRoutes() {
   const { token, user, handleLogout } = useAuth();
@@ -33,14 +35,16 @@ function AppRoutes() {
             element={<PostView />}
           />
           <Route path="/home/:username" element={<HomePage />} />
+          <Route path="/home/:username/spaces" element={<SpaceList />} />
+          <Route path="/home/:username/spaces/:spaceSlug" element={<PublicSpacePage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard user={user} />} />
-            <Route path="/home/:username/spaces" element={<SpaceList />} />
             <Route path="/spaces/new" element={<CreateSpace />} />
             <Route path="/spaces/:slug/edit" element={<EditSpace />} />
             <Route path="/posts" element={<OwnPostsPage />} />
             <Route path="/posts/new" element={<CreatePost />} />
             <Route path="/home/:username/edit" element={<EditHomePost />} />
+            <Route path="/edit-space-home-post/:spaceSlug" element={<EditSpaceHomePost />} />
           </Route>
 
           // NotFound

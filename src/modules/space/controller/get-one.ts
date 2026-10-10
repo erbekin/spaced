@@ -13,3 +13,19 @@ export const GetOneSpaceController = (spaceService: ISpaceService): Handler => (
       res.status(error.status).json(error);
     })
 }
+
+export const TryGetOneController = (spaceService: ISpaceService): Handler => (req, res) => {
+  const { username, spaceSlug } = req.params;
+  if (typeof username !== 'string' || typeof spaceSlug !== 'string') {
+    throw new Error("dynamic username or spaceSlug is not a string")
+  }
+  spaceService.get(username, spaceSlug)
+    .match((spaceEntityWithOwner) => {
+      res.json({found: true, data: spaceEntityWithOwner});
+    }, (error) => {
+      if (error.code === 'OWNER_NOT_FOUND' || error.code === 'SPACE_NOT_FOUND') {
+        return res.json({found: false, data: null, code: error.code});
+      }
+      res.status(error.status).json(error);
+    })
+}

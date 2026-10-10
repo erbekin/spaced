@@ -1,39 +1,38 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useAuthFetch } from '../hooks/useAuthFetch';
-import { type Space, type PaginatedResponse } from '../types';
+import { type SpaceEntity, type PaginatedResponse } from '../types';
 import SpaceSelector from './SpaceSelector';
 import PostList from './PostList';
+import SpaceHomePost from './SpaceHomePost';
 
-type LocationState = { space?: Space };
+type LocationState = { space?: SpaceEntity };
 
 export default function OwnPostsPage() {
   const { user } = useAuth();
-  const authFetch = useAuthFetch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [spaces, setSpaces] = useState<SpaceEntity[]>([]);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
 
   // Restore selected space when navigating back from CreatePost
-  const [currentSpace, setCurrentSpace] = useState<Space | null>(
+  const [currentSpace, setCurrentSpace] = useState<SpaceEntity | null>(
     (location.state as LocationState | null)?.space ?? null
   );
 
   useEffect(() => {
     if (!user) return;
 
-    authFetch(`/api/spaces/${user.username}`)
+    fetch(`/api/spaces/${user.username}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch spaces');
-        return res.json() as Promise<PaginatedResponse<Space>>;
+        return res.json() as Promise<PaginatedResponse<SpaceEntity>>;
       })
       .then((data) => setSpaces(data.items ?? []))
       .catch(() => {})
       .finally(() => setLoadingSpaces(false));
-  }, [user, authFetch]);
+  }, [user]);
 
   const handleCreatePost = () => {
     if (!currentSpace) return;
@@ -71,7 +70,19 @@ export default function OwnPostsPage() {
           Select a space above to view its posts.
         </div>
       ) : (
-        <PostList key={currentSpace.id} username={user!.username} space={currentSpace} />
+        <div className="space-y-8">
+          <SpaceHomePost
+            key={`home-${currentSpace.id}`}
+            username={user!.username}
+            spaceSlug={currentSpace.slug}
+            canEdit
+          />
+          <PostList
+            key={`posts-${currentSpace.id}`}
+            username={user!.username}
+            spaceSlug={currentSpace.slug}
+          />
+        </div>
       )}
     </div>
   );

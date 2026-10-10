@@ -7,9 +7,8 @@ import { slugSchema } from "../../schema";
 const updateSchema = z.object({
   slug: slugSchema,
   name: z.string().optional(),
-  homePostId: z.uuid().optional().nullable(),
-}) .refine((data) => Boolean(data.slug || data.name || data.homePostId !== undefined), {
-  message: "At least one of 'slug' or 'name' or 'homePostId' is required.",
+}) .refine((data) => Boolean(data.slug || data.name), {
+  message: "At least one of 'slug' or 'name' is required.",
 });;
 
 const apiErrors = defineErrors('space::update', {

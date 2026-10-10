@@ -1,4 +1,4 @@
-import type { ResultAsync } from "neverthrow";
+import { errAsync, okAsync, type ResultAsync } from "neverthrow";
 import { SpaceError } from "./errors";
 import type { ISpaceRepository } from "./repository-interface";
 import type { IUserService } from "../user/service";
@@ -12,15 +12,18 @@ export type SpaceEntity = {
     ownerId: string;
     createdAt: Date;
     updatedAt: Date;
-    homePostId: string | null;
 }
 
-export type SpaceEntityWithOwner = SpaceEntity & {
+export type SpaceEntityExtented = SpaceEntity & {
     owner: {
         id: string;
         username: string;
         name: string | null;
-    };
+    },
+    spaceHomePost: {
+        content: string;
+        createdAt: Date;
+    } | null,
 }
 
 export type CreateSpaceDto = {
@@ -31,18 +34,34 @@ export type CreateSpaceDto = {
 export type UpdateSpaceDto = {
   name?: string;
   slug?: string;
-  /** null to remove the home post */
-  homePostId?: string | null;
 }
 
+export type SpaceHomePostDto = {
+  spaceId: string;
+  content: string;
+  createdAt: Date;
+}
+
+export type SpaceHomePostEntity =  {
+   createdAt: Date;
+   spaceId: string;
+   content: string;
+   id: string;
+   updatedAt: Date;
+};
+
+
+export type SpaceHomePostSetDto = Omit<SpaceHomePostDto, 'createdAt'>;
 export interface ISpaceService {
   /** Creates a new space */
   create(dto: CreateSpaceDto): ResultAsync<SpaceEntity, SpaceError>;
   /** Lists all spaces owned by the given user */
   list(username: string, page: PageArgs): ResultAsync<Page<SpaceEntity>, SpaceError>;
-  get(username: string, spaceSlug: string): ResultAsync<SpaceEntityWithOwner, SpaceError>;
+  get(username: string, spaceSlug: string): ResultAsync<SpaceEntityExtented, SpaceError>;
   update(username: string, spaceSlug: string, dto: UpdateSpaceDto): ResultAsync<SpaceEntity, SpaceError>;
   delete(username: string, spaceSlug: string): ResultAsync<void, SpaceError>;
+  setHomePost(dto: SpaceHomePostSetDto): ResultAsync<void, SpaceError>;
+  getHomePost(spaceId: string): ResultAsync<SpaceHomePostDto | null, SpaceError>;
 }
 
 
@@ -82,7 +101,7 @@ export class SpaceService implements ISpaceService {
         return SpaceError.create('SERVICE_FAILURE', { cause: error });
       })
   }
-  get(username: string, spaceSlug: string): ResultAsync<SpaceEntityWithOwner, SpaceError> {
+  get(username: string, spaceSlug: string): ResultAsync<SpaceEntityExtented, SpaceError> {
     return this.userService.getByUsername(username)
       .mapErr((error) => SpaceError.create('OWNER_NOT_FOUND', { cause: error }))
       .map((user) => user.id)
@@ -124,6 +143,20 @@ export class SpaceService implements ISpaceService {
         return this.repository.selectAll({ mode: 'username', value: username }, page)
           .mapErr((error) => SpaceError.create('SERVICE_FAILURE', {cause: error}));
       });
+  }
+  setHomePost(dto: SpaceHomePostSetDto): ResultAsync<void, SpaceError> {
+    return this.repository.upsertHomePost(dto)
+      .mapErr((error) => SpaceError.create('SERVICE_FAILURE', {cause: error}))
+      .map(() => undefined);
+  }
+  getHomePost(spaceId: string): ResultAsync<SpaceHomePostDto | null, SpaceError> {
+    return this.repository.selectHomePost(spaceId)
+      .orElse((error) => {
+        if (error.code === 'NotFoundError')
+          return okAsync(null);
+        return errAsync(error);
+      })
+      .mapErr((error) => SpaceError.create('SERVICE_FAILURE', {cause: error}));
   }
 
 }

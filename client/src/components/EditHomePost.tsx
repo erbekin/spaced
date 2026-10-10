@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { useAuthFetch } from '../hooks/useAuthFetch';
 import type { HomePostDto } from '../types';
+import ContentEditor from './ContentEditor';
 
 export default function EditHomePost() {
   const authFetch = useAuthFetch();
@@ -67,34 +66,7 @@ export default function EditHomePost() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 border border-gray-400 rounded overflow-hidden h-96">
-          {/* Editor */}
-          <div className="flex flex-col border-r border-gray-300">
-            <div className="text-xs text-gray-400 px-3 py-1.5 border-b border-gray-200 bg-gray-50">
-              Editor
-            </div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write markdown here..."
-              className="flex-1 p-3 text-sm resize-none focus:outline-none font-mono"
-            />
-          </div>
-
-          {/* Preview */}
-          <div className="flex flex-col">
-            <div className="text-xs text-gray-400 px-3 py-1.5 border-b border-gray-200 bg-gray-50">
-              Preview
-            </div>
-            <div className="flex-1 p-3 overflow-y-auto text-sm markdown-preview">
-              {content ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-              ) : (
-                <p className="text-gray-400 text-xs">Preview will appear here...</p>
-              )}
-            </div>
-          </div>
-        </div>
+        <ContentEditor value={content} onChange={setContent} />
 
         <div className="flex gap-2 pt-2">
           <button

@@ -1,11 +1,11 @@
-import type { ResultAsync } from "neverthrow";
+import { ResultAsync } from "neverthrow";
 import {
   SpaceRepositoryError,
   type ISpaceInsertArgs,
   type ISpaceRepository,
   type ISpaceUpdateArgs,
 } from "./repository-interface";
-import type {SpaceEntity, SpaceEntityWithOwner } from "./service";
+import type {SpaceEntity, SpaceEntityExtented, SpaceHomePostEntity, SpaceHomePostSetDto } from "./service";
 import { prisma } from "../../lib/prisma";
 import { handleKnownRequestErrorRes, type CaughtInfo } from "../../lib/prisma-utils";
 import { Maybe } from "purify-ts";
@@ -94,7 +94,7 @@ export class PrismaSpaceRepository implements ISpaceRepository {
   selectOne(
     spaceSlug: string,
     ownerId: string,
-  ): ResultAsync<SpaceEntityWithOwner, SpaceRepositoryError> {
+  ): ResultAsync<SpaceEntityExtented, SpaceRepositoryError> {
     return handleKnownRequestErrorRes("P2025", () => {
       return prisma.space.findUniqueOrThrow({
         where: {
@@ -107,10 +107,15 @@ export class PrismaSpaceRepository implements ISpaceRepository {
           id: true,
           name: true,
           slug: true,
-          homePostId: true,
           createdAt: true,
           updatedAt: true,
           ownerId: true,
+          spaceHomePost: {
+            select: {
+              content: true,
+              createdAt: true,
+            }
+          },
           owner: {
             select: {
               id: true,
@@ -154,5 +159,30 @@ export class PrismaSpaceRepository implements ISpaceRepository {
     })
       .mapErr(toRepositoryError)
       .map(() => undefined);
+  }
+  selectHomePost(spaceId: string): ResultAsync<SpaceHomePostEntity | null, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes(["P2025"], () => {
+      return prisma.spaceHomePost.findUniqueOrThrow({
+        where: {
+          spaceId,
+        },
+      });
+    }).mapErr(toRepositoryError);
+  }
+  upsertHomePost(dto: SpaceHomePostSetDto): ResultAsync<SpaceHomePostEntity, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes(['P2002'], () => {
+      return prisma.spaceHomePost.upsert({
+        where: {
+          spaceId: dto.spaceId,
+        },
+        create: {
+          content: dto.content,
+          spaceId: dto.spaceId,
+        },
+        update: {
+          content: dto.content,
+        },
+      })
+    }).mapErr(toRepositoryError)
   }
 }

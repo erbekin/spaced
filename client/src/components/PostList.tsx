@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useAuthFetch } from '../hooks/useAuthFetch';
-import { type Post, type PaginatedResponse, type Space } from '../types';
+import { type Post, type PaginatedResponse } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { dateTimeLocal } from '../utils';
 
 type PostListProps = {
   username: string;
-  space: Space;
+  spaceSlug: string;
 };
 
 
 
-export default function PostList({ username, space }: PostListProps) {
-  const authFetch = useAuthFetch();
+export default function PostList({ username, spaceSlug }: PostListProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
@@ -22,7 +20,7 @@ export default function PostList({ username, space }: PostListProps) {
   useEffect(() => {
     let cancelled = false;
 
-    authFetch(`/api/posts/${username}/${space.slug}`)
+    fetch(`/api/posts/${username}/${spaceSlug}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch posts');
         return res.json() as Promise<PaginatedResponse<Post>>;
@@ -41,15 +39,15 @@ export default function PostList({ username, space }: PostListProps) {
       });
 
     return () => { cancelled = true; };
-  }, [username, space.slug, authFetch]);
+  }, [username, spaceSlug]);
 
   const handleLoadMore = async () => {
     if (!nextCursor) return;
     setLoadingMore(true);
     try {
-      const url = new URL(`/api/posts/${username}/${space.slug}`, window.location.origin);
+      const url = new URL(`/api/posts/${username}/${spaceSlug}`, window.location.origin);
       url.searchParams.set('cursor', nextCursor);
-      const res = await authFetch(url.toString());
+      const res = await fetch(url.toString());
       if (!res.ok) throw new Error('Failed to fetch more posts');
       const data: PaginatedResponse<Post> = await res.json();
       setPosts((prev) => [...prev, ...data.items]);

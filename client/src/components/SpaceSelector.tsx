@@ -1,9 +1,9 @@
-import type { Space } from '../types';
+import type { SpaceEntity } from '../types';
 
 type SpaceSelectorProps = {
-  spaces: Space[];
-  value: Space | null;
-  onChange: (space: Space | null) => void;
+  spaces: SpaceEntity[];
+  value: SpaceEntity | null;
+  onChange: (space: SpaceEntity | null) => void;
 };
 
 export default function SpaceSelector({ spaces, value, onChange }: SpaceSelectorProps) {
