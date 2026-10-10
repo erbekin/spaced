@@ -28,6 +28,7 @@ precision highp float;
 uniform vec2 u_res;
 uniform float u_drift;
 uniform vec2 u_cam;
+uniform float u_time;
 out vec4 o;
 
 float hash(vec2 p) {
@@ -53,6 +54,12 @@ float fbm(vec2 p) {
   return v;
 }
 
+vec2 rot(vec2 p, float a) {
+  float c = cos(a);
+  float s = sin(a);
+  return vec2(c * p.x + s * p.y, -s * p.x + c * p.y);
+}
+
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / u_res.y;
   vec2 p = uv * 1.6 + u_cam * 0.12 + vec2(u_drift, u_drift * 0.4);
@@ -60,6 +67,32 @@ void main() {
   float n2 = fbm(p * 1.7 - u_drift * 0.7 + 5.0);
   float c = smoothstep(0.42, 0.9, n) * (0.35 + 0.65 * n2);
   vec3 col = vec3(0.006, 0.008, 0.014) + c * vec3(0.075, 0.085, 0.14);
+
+  // Milky Way: a tilted luminous band with grainy glow, dust lanes and
+  // twinkling stars. It is very far away, so it barely reacts to the camera.
+  vec2 m = rot(uv + u_cam * 0.04, 0.55);
+  m.x += u_drift * 0.04;
+  float centre = (noise(vec2(m.x * 1.3, 7.0)) - 0.5) * 0.4;
+  float d = m.y - centre;
+  float halo = exp(-d * d / 0.12);
+  if (halo > 0.02) {
+    float core = exp(-d * d / 0.015);
+    float cloudy = fbm(m * 3.2 + 11.0);
+    float lane = smoothstep(0.5, 0.68, fbm(vec2(m.x * 2.4, m.y * 7.0) + 40.0));
+    float glow = (halo * 0.35 + core * 0.7) * (0.4 + 0.95 * cloudy);
+    glow *= 1.0 - 0.7 * lane * core;
+    col += glow * mix(vec3(0.20, 0.25, 0.45), vec3(0.55, 0.47, 0.38), core) * 0.4;
+
+    // Glittering stars packed inside the band
+    vec2 g = m * 320.0;
+    vec2 cell = floor(g);
+    float h = hash(cell);
+    vec2 off = vec2(hash(cell + 7.3), hash(cell + 1.9)) * 0.5 - 0.25;
+    float shape = 1.0 - smoothstep(0.02, 0.4, length(fract(g) - 0.5 - off));
+    float twinkle = 0.65 + 0.35 * sin(u_time * 2.5 + h * 60.0);
+    col += step(0.99, h) * shape * twinkle * (halo * 0.5 + core * 0.9) * vec3(0.85, 0.9, 1.0);
+  }
+
   col *= 1.0 - 0.55 * dot(uv, uv);
   o = vec4(col, 1.0);
 }`;
@@ -249,6 +282,7 @@ export default function WatchSpace() {
       res: gl.getUniformLocation(nebulaProgram, "u_res"),
       drift: gl.getUniformLocation(nebulaProgram, "u_drift"),
       cam: gl.getUniformLocation(nebulaProgram, "u_cam"),
+      time: gl.getUniformLocation(nebulaProgram, "u_time"),
     };
     const su = {
       travel: gl.getUniformLocation(starProgram, "u_travel"),
@@ -336,6 +370,8 @@ export default function WatchSpace() {
       gl.uniform2f(nu.res, w, h);
       gl.uniform1f(nu.drift, drift);
       gl.uniform2f(nu.cam, camX, camY);
+      // Wrapped on a whole number of twinkle periods so float precision stays fine
+      gl.uniform1f(nu.time, (now * 0.001) % 628.3185);
       gl.bindVertexArray(emptyVao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
