@@ -5,48 +5,48 @@ import { type Space, type PaginatedResponse } from '../types';
 
 export default function SpaceList() {
   const { user: currentUser } = useAuth();
-    const { username } = useParams<{ username: string }>();
-    const navigate = useNavigate();
+  const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
 
-    const targetUsername = username || currentUser?.username;
-    const isOwner = !!(currentUser && targetUsername && currentUser.username === targetUsername);
+  const targetUsername = username || currentUser?.username;
+  const isOwner = !!(currentUser && targetUsername && currentUser.username === targetUsername);
 
-    const [spaces, setSpaces] = useState<Space[]>([]);
-    // Only start in a loading state if there is actually a user to fetch for
-    const [loading, setLoading] = useState(() => Boolean(targetUsername));
-    const [error, setError] = useState<string | null>(null);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  // Only start in a loading state if there is actually a user to fetch for
+  const [loading, setLoading] = useState(() => Boolean(targetUsername));
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-      // If there is no user, do nothing (loading is already false)
-      if (!targetUsername) return;
+  useEffect(() => {
+    // If there is no user, do nothing (loading is already false)
+    if (!targetUsername) return;
 
-      let isMounted = true;
+    let isMounted = true;
 
-      fetch(`/api/spaces/${targetUsername}`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to fetch spaces');
-          return res.json() as Promise<PaginatedResponse<Space>>;
-        })
-        .then((data) => {
-          if (isMounted) {
-            setSpaces(data.items ?? []);
-            setError(null);
-          }
-        })
-        .catch((err: unknown) => {
-          if (isMounted) {
-            setError(err instanceof Error ? err.message : 'Failed to load spaces');
-            setSpaces([]);
-          }
-        })
-        .finally(() => {
-          if (isMounted) setLoading(false);
-        });
+    fetch(`/api/spaces/${targetUsername}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch spaces');
+        return res.json() as Promise<PaginatedResponse<Space>>;
+      })
+      .then((data) => {
+        if (isMounted) {
+          setSpaces(data.items ?? []);
+          setError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load spaces');
+          setSpaces([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
-      return () => {
-        isMounted = false;
-      };
-    }, [targetUsername]);
+    return () => {
+      isMounted = false;
+    };
+  }, [targetUsername]);
 
   if (!targetUsername) {
     return (
@@ -107,23 +107,49 @@ export default function SpaceList() {
                 </p>
               </div>
 
-              {/* Arrow navigation button */}
-              <button
-                onClick={() => navigate(`/home/${targetUsername}/spaces/${space.slug}`)}
-                aria-label={`Open ${space.name}`}
-                className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors shrink-0"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 transform group-hover:translate-x-0.5 transition-transform"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+              <div className="flex shrink-0 items-center gap-1">
+                {/* Edit button (owner only) */}
+                {isOwner && (
+                  <button
+                    onClick={() => navigate(`/spaces/${space.slug}/edit`)}
+                    aria-label={`Edit ${space.name}`}
+                    className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Arrow navigation button */}
+                <button
+                  onClick={() => navigate(`/home/${targetUsername}/spaces/${space.slug}`)}
+                  aria-label={`Open ${space.name}`}
+                  className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 transform group-hover:translate-x-0.5 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </li>
           ))}
         </ul>

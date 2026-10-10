@@ -149,7 +149,7 @@ export default function EditSpace() {
         <div className="flex gap-2 pt-2">
           <button
             type="button"
-            onClick={() => navigate('/spaces')}
+            onClick={() => navigate(`/home/${user.username}/spaces`)}
             className="flex-1 border border-gray-400 text-gray-700 py-2 text-sm font-semibold rounded hover:bg-gray-50 transition-colors"
           >
             Cancel
