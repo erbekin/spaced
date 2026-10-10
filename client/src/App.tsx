@@ -32,6 +32,7 @@ function AppRoutes() {
             path="/posts/view/:postId"
             element={<PostView />}
           />
+          <Route path="/home/:username" element={<HomePage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/spaces" element={<SpaceList />} />
@@ -39,7 +40,6 @@ function AppRoutes() {
             <Route path="/spaces/:slug/edit" element={<EditSpace />} />
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/posts/new" element={<CreatePost />} />
-            <Route path="/home/:username" element={<HomePage />} />
             <Route path="/home/:username/edit" element={<EditHomePost />} />
           </Route>
 

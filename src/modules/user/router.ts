@@ -9,6 +9,7 @@ import { AccessTokenAuthMiddleware } from "../auth/middleware/access-token-auth"
 import { RefreshUserController } from "./controller/refresh";
 import { LogoutUserController } from "./controller/logout";
 import type { ISessionService } from "../auth/session/service";
+import { GetUserHome } from "./controller/info";
 
 
 
@@ -47,6 +48,8 @@ export function createRouter(params: IUserRouterParams): Router {
   router.get('/me/home-post', accessTokenAuthMiddleware, MeHomePostController(params.userService))
   router.post('/me/home-post', accessTokenAuthMiddleware, MeSetHomePostController(params.userService))
 
+  // public
+  router.get('/homes/:username', GetUserHome(params.userService))
   return router;
 }
 

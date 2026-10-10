@@ -33,7 +33,15 @@ export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) 
             Log out
           </button>
         ) : (
-          <span>Welcome</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">Welcome</span>
+            <Link
+              to="/login"
+              className="px-4 py-1.5 text-sm font-semibold text-white bg-gray-900 hover:bg-black rounded-md transition-colors"
+            >
+              Log in
+            </Link>
+          </div>
         )}
       </nav>
     </header>

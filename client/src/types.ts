@@ -57,3 +57,12 @@ export type PostWithSpaceInfo = {
     };
   };
 };
+
+export type UserHomeInfo = {
+  user: {
+    id: string;
+    username: string;
+    name: string | null;
+  };
+  homePost: HomePostDto['homePost']
+};
