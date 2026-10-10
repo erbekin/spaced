@@ -110,4 +110,5 @@ model HomePost {
   createdAt  DateTime @default(now()) @map("created_at")
 
   user      User    @relation("UserHomePosts", fields: [userId], references: [id], onDelete: Cascade)
+  @@map("home_posts")
 }
