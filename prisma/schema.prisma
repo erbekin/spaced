@@ -54,9 +54,8 @@ model Space {
   // Normal post listesi ilişkisi
   posts      Post[]   @relation("SpacePosts")
 
-  // Öne çıkan / ana sayfa postu (1-1 ilişki)
-  homePostId String?  @unique @db.Uuid @map("home_post_id")
-  homePost   Post?    @relation("homePost", fields: [homePostId], references: [id], onDelete: SetNull)
+  // space home post
+  spaceHomePost SpaceHomePost? @relation("SpaceHomePosts")
 
   // abone olanlar
   subscriptions Subscription[] @relation("SpaceSubscriptions")
@@ -81,8 +80,6 @@ model Post {
   spaceId   String   @db.Uuid @map("space_id")
   space     Space    @relation("SpacePosts", fields: [spaceId], references: [id], onDelete: Cascade)
 
-  // Eğer bu post bir space'in homePost'u ise ters ilişki:
-  homeSpace Space?   @relation("homePost")
   // allows finding posts by spaceId efficiently
   @@index([spaceId, createdAt])
 
@@ -108,7 +105,21 @@ model HomePost {
   content   String
 
   createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   user      User    @relation("UserHomePosts", fields: [userId], references: [id], onDelete: Cascade)
   @@map("home_posts")
+}
+
+model SpaceHomePost {
+  id        String   @id @default(uuid()) @db.Uuid
+  spaceId   String  @unique @db.Uuid @map("space_id")
+
+  content   String
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  space     Space   @relation("SpaceHomePosts", fields: [spaceId], references: [id], onDelete: Cascade)
+  @@map("space_home_posts")
 }
