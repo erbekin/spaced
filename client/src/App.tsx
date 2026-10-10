@@ -35,7 +35,7 @@ function AppRoutes() {
           <Route path="/home/:username" element={<HomePage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard user={user} />} />
-            <Route path="/spaces" element={<SpaceList />} />
+            <Route path="/home/:username/spaces" element={<SpaceList />} />
             <Route path="/spaces/new" element={<CreateSpace />} />
             <Route path="/spaces/:slug/edit" element={<EditSpace />} />
             <Route path="/posts" element={<PostsPage />} />

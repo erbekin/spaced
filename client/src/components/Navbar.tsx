@@ -27,10 +27,10 @@ export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) 
         <div className="flex gap-6">
           {isLoggedIn && username && (
             <>
-              <NavLink to={`/home/${username}`} className={linkClass}>
+              <NavLink to={`/home/${username}`} end className={linkClass}>
                 Home
               </NavLink>
-              <NavLink to="/spaces" className={linkClass}>
+              <NavLink to={`/home/${username}/spaces`} className={linkClass}>
                 Spaces
               </NavLink>
               <NavLink to="/posts" className={linkClass}>
@@ -41,9 +41,17 @@ export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) 
           )}
         </div>
         {isLoggedIn ? (
-          <button onClick={onLogout} className="px-4 py-1.5 text-sm font-semibold text-white bg-red-700 hover:bg-yellow-700 rounded-md transition-colors">
-            Log out
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 italic">
+              You are logged in as {username ? `@${username}` : 'user'}
+            </span>
+            <button
+              onClick={onLogout}
+              className="px-4 py-1.5 text-sm font-semibold text-white bg-red-700 hover:bg-yellow-700 rounded-md transition-colors"
+            >
+              Log out
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">Welcome</span>
