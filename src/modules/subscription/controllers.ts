@@ -6,6 +6,7 @@ import { defineErrors } from "../../lib/api-error";
 import type { IUserService } from "../user/service";
 import type { ISpaceService } from "../space/service";
 import { slugSchema, uuidSchema } from "../schema";
+import { usernameSchema } from "../user/username";
 
 const DETAILS_QUERY_MAX_SUBSCRIPTION_IDS = 50;
 const DETAILS_BODY_MAX_SUBSCRIPTION_IDS = 500;
@@ -88,7 +89,7 @@ export const ListSubscriptionsController =
   (subService: ISubscriptionService, userService: IUserService): Handler =>
   (req, res) => {
     const { username } = req.params;
-    const parsed = parseParams(uuidSchema)(username);
+    const parsed = parseParams(usernameSchema)(username);
     if (parsed.isErr()) {
       res.status(400).json(parsed.error);
       return;
