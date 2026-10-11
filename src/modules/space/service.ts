@@ -3,6 +3,7 @@ import { SpaceError } from "./errors";
 import type { ISpaceRepository } from "./repository-interface";
 import type { IUserService } from "../user/service";
 import type { Page, PageArgs } from "../../lib/pagination";
+import type { Space } from "../../../generated/prisma/client";
 
 
 export type SpaceEntity = {
@@ -60,6 +61,7 @@ export interface ISpaceService {
   get(username: string, spaceSlug: string): ResultAsync<SpaceEntityExtented, SpaceError>;
   update(username: string, spaceSlug: string, dto: UpdateSpaceDto): ResultAsync<SpaceEntity, SpaceError>;
   delete(username: string, spaceSlug: string): ResultAsync<void, SpaceError>;
+  checkSpace(userId: string, spaceId: string): ResultAsync<boolean, SpaceError>;
   setHomePost(dto: SpaceHomePostSetDto): ResultAsync<void, SpaceError>;
   getHomePost(spaceId: string): ResultAsync<SpaceHomePostDto | null, SpaceError>;
 }
@@ -159,4 +161,13 @@ export class SpaceService implements ISpaceService {
       .mapErr((error) => SpaceError.create('SERVICE_FAILURE', {cause: error}));
   }
 
+  checkSpace(userId: string, spaceId: string): ResultAsync<boolean, SpaceError> {
+    return this.repository.checkById(userId, spaceId)
+      .mapErr((error) => {
+        if (error.code === 'NotFoundError') {
+          return SpaceError.create('SPACE_NOT_FOUND');
+        }
+        return SpaceError.create('SERVICE_FAILURE', { cause: error });
+      })
+  }
 }

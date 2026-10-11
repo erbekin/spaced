@@ -1,7 +1,9 @@
-import { ResultAsync } from "neverthrow";
+import { errAsync, ResultAsync, safeTry } from "neverthrow";
 import { SubscriptionError } from "./errors";
 import { prisma } from "../../lib/prisma";
 import { handleKnownRequestErrorRes } from "../../lib/prisma-utils";
+import type { ISpaceService } from "../space/service";
+import type { IUserService } from "../user/service";
 export type Subscription = {
   id: string;
   userId: string;
@@ -45,22 +47,35 @@ export interface ISubscriptionService {
 //========== Implementation =================================================/
 
 export class SubscriptionService implements ISubscriptionService {
-  constructor() {}
+  constructor(private readonly spaceService: ISpaceService,
+    private readonly userService : IUserService) { }
   subscribe(userId: string, spaceId: string): ResultAsync<Subscription, SubscriptionError> {
-    return ResultAsync.fromPromise(
-      prisma.subscription.create({
-        data: {
-          userId,
-          spaceId,
-        },
-        select: {
-          id: true,
-          userId: true,
-          spaceId: true,
-        },
-      }),
-      (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
-    );
+    const _this = this;
+    return safeTry(async function* () {
+      // get user
+      const user = yield* _this.userService.getById(userId);
+      // check space
+      const spaceExists = yield* _this.spaceService.checkSpace(user.id, spaceId);
+      // user cant subscribe to a space they own
+      if (spaceExists) return errAsync(SubscriptionError.create('FORBIDDEN'));
+      return ResultAsync.fromPromise(
+        prisma.subscription.create({
+          data: {
+            userId,
+            spaceId,
+          },
+          select: {
+            id: true,
+            userId: true,
+            spaceId: true,
+          },
+        }),
+        (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
+      );
+    }).mapErr((error) => {
+      if (SubscriptionError.is(error)) return error;
+      return SubscriptionError.create("SERVICE_FAILURE", { cause: error });
+    });
   }
   unsubscribe(userId: string, spaceId: string): ResultAsync<void, SubscriptionError> {
     const res = handleKnownRequestErrorRes("2025", () => {

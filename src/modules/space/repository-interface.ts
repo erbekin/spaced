@@ -41,4 +41,5 @@ export interface ISpaceRepository {
   delete(ownerId: string, spaceSlug: string): ResultAsync<void, SpaceRepositoryError>;
   upsertHomePost(dto: SpaceHomePostSetDto): ResultAsync<SpaceHomePostEntity, SpaceRepositoryError>;
   selectHomePost(spaceId: string): ResultAsync<SpaceHomePostEntity | null, SpaceRepositoryError>;
+  checkById(userId: string, spaceId: string): ResultAsync<boolean, SpaceRepositoryError>;
 }

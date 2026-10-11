@@ -10,6 +10,7 @@ import { prisma } from "../../lib/prisma";
 import { handleKnownRequestErrorRes, type CaughtInfo } from "../../lib/prisma-utils";
 import { Maybe } from "purify-ts";
 import type { PageArgs, Page } from "../../lib/pagination";
+import { toJSONSchema } from "zod/v4/core";
 
 const PRISMA_CODES = ["P2002", "P2003"];
 const UNAVAILABLE_CODES = new Set(["P1001", "P1002", "P1008", "P2024"]);
@@ -184,5 +185,15 @@ export class PrismaSpaceRepository implements ISpaceRepository {
         },
       })
     }).mapErr(toRepositoryError)
+  }
+  checkById(userId: string, spaceId: string): ResultAsync<boolean, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes(['P2025'], () => {
+      return prisma.space.count({
+        where: {
+          ownerId: userId,
+          id: spaceId
+        }
+      })
+    }).mapErr(toRepositoryError).map((c) => c > 0);
   }
 }
