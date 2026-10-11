@@ -29,7 +29,7 @@ const parseParams = <T>(schema: z.ZodType<T>) =>
 export type ControllerType = "subscribe" | "unsubscribe";
 
 const subscribeParamsSchema = z.object({
-  username: z.uuidv4(),
+  username: usernameSchema,
   spaceSlug: slugSchema,
 });
 
@@ -54,23 +54,17 @@ export const SubscribeController =
         res.status(err.status).json(err);
       });
     }
-    // token username must match username param
-    if (token.username !== usernameParam) {
-      return apiErrors.use("FORBIDDEN")((err) => {
-        res.status(err.status).json(err);
-      });
-    }
+    const { userId } = token;
     // get ids using services.
     userService
       .getByUsername(usernameParam)
       .andThen((user) => {
         return spaceService.get(user.username, spaceSlugParam).map((space) => ({
           spaceId: space.id,
-          userId: user.id,
         }));
       })
       // subscribe or unsubscribe based on the controller type
-      .andThen(({ spaceId, userId }) => {
+      .andThen(({ spaceId }) => {
         return type === "subscribe"
           ? subService.subscribe(userId, spaceId)
           : subService.unsubscribe(userId, spaceId);

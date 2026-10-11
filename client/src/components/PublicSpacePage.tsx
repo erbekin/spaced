@@ -4,6 +4,8 @@ import PostList from './PostList';
 import type { SpaceEntityEx } from '../types';
 import { dateTimeLocal } from '../utils';
 import SpaceHomePost from './SpaceHomePost';
+import SubscribeButton from './SubscribeButton';
+
 export default function PublicSpacePage() {
   const { username, spaceSlug } = useParams<{ username: string; spaceSlug: string }>();
 
@@ -111,21 +113,33 @@ export default function PublicSpacePage() {
 
         {status === 'found' && space && (
           <div className="space-y-6">
-            <header className="border-b border-gray-100 pb-4">
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                {space.name}
-              </h1>
-              <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-500">
-                <time dateTime={dateTimeLocal(space.createdAt, false)}>
-                  {dateTimeLocal(space.createdAt, false)}
-                </time>
+            <header className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                  {space.name}
+                </h1>
+                <div className="mt-2.5 flex items-center gap-2 text-xs text-gray-500">
+                  <time dateTime={dateTimeLocal(space.createdAt, false)}>
+                    {dateTimeLocal(space.createdAt, false)}
+                  </time>
+                </div>
               </div>
+
+              <SubscribeButton
+                ownerUsername={space.owner.username}
+                spaceSlug={space.slug}
+                spaceId={space.id}
+              />
             </header>
 
             <SpaceHomePost
               username={space.owner.username}
               spaceSlug={space.slug}
-              homePost={{spaceId: space.id, ...space.spaceHomePost}}
+              homePost={
+                space.spaceHomePost
+                  ? { spaceId: space.id, ...space.spaceHomePost }
+                  : null
+              }
               showHeading={false}
               hideWhenEmpty
             />

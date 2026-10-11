@@ -36,6 +36,9 @@ export default function Navbar({ isLoggedIn, onLogout, username }: NavbarProps) 
               <NavLink to="/posts" className={linkClass}>
                 Posts
               </NavLink>
+              <NavLink to="/subscriptions" className={linkClass}>
+                Subscriptions
+              </NavLink>
               <GoToUserHome />
             </>
           )}

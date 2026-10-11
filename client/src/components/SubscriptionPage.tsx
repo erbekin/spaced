@@ -90,6 +90,7 @@ export default function SubscriptionsPage() {
 
     try {
       const res = await authFetch(
+        // :username is the space owner; the subscriber comes from the token
         `/api/subscriptions/unsubscribe/${encodeURIComponent(sub.space.owner.username)}/${encodeURIComponent(sub.space.slug)}`,
         { method: 'POST' }
       );

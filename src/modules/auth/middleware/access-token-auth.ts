@@ -34,7 +34,6 @@ export const AccessTokenAuthMiddleware = (tokenService: ITokenService): Handler 
     res.header('WWW-Authenticate', 'Bearer realm="token"');
     return moduleErrors.use('NO_TOKEN')((error) => res.status(error.status).json(error));
   }
-  console.log("auth middleware executed");
   // verify token.
   // invalid -> 401
   // valid -> set token on locals and call next

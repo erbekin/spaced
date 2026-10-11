@@ -54,6 +54,7 @@ export class SubscriptionService implements ISubscriptionService {
   constructor(private readonly spaceService: ISpaceService,
     private readonly userService : IUserService) { }
   subscribe(userId: string, spaceId: string): ResultAsync<Subscription, SubscriptionError> {
+    console.log("subscribe", userId, spaceId)
     const _this = this;
     return safeTry(async function* () {
       // get user
