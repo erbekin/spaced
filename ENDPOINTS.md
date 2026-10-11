@@ -320,13 +320,13 @@ Delete a post by its ID.
 ## Subscriptions
 
 ### `POST /subscriptions/subscribe/:username/:spaceSlug` 🔒
-Subscribe to a space.
+Subscribe to a space. Users cannot subscribe to spaces they own.
 **Response** 200 - subscription created
 ### `POST /subscriptions/unsubscribe/:username/:spaceSlug` 🔒
-Unsubscribe.
+Unsubscribe. 404 if the subscription does not exist (code 'USER_OR_SPACE_NOT_FOUND')
 
 ### `GET /subscriptions/:username` 🔒
-Get list of subscriptions of user.  
+Get list of subscriptions of user.  404 if the user does not exist (code 'USER_OR_SPACE_NOT_FOUND')
 **Response** Array.
 ```json
 [

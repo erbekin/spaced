@@ -42,4 +42,5 @@ export interface ISpaceRepository {
   upsertHomePost(dto: SpaceHomePostSetDto): ResultAsync<SpaceHomePostEntity, SpaceRepositoryError>;
   selectHomePost(spaceId: string): ResultAsync<SpaceHomePostEntity | null, SpaceRepositoryError>;
   checkById(userId: string, spaceId: string): ResultAsync<boolean, SpaceRepositoryError>;
+  countById(spaceId: string): ResultAsync<number, SpaceRepositoryError>;
 }

@@ -30,13 +30,11 @@ export interface ISubscriptionService {
   /** Unsubscribe user from a space. */
   unsubscribe(userId: string, spaceId: string): ResultAsync<void, SubscriptionError>;
   /** Get all subscriptions for a user.
-   * Note: if user is not found, returns an empty array.
-   * So, empty array means two things: user is not found or user has no subscriptions.
+   * Note: if user is not found, returns error with code 'USER_OR_SPACE_NOT_FOUND'.
    */
   getSubscriptions(userId: string): ResultAsync<Subscription[], SubscriptionError>;
   /** Get all subscribers for a space.
-   * Note: if space is not found, returns an empty array.
-   * So, empty array means two things: space is not found or space has no subscribers.
+   * Note: if space is not found, returns error with code 'USER_OR_SPACE_NOT_FOUND'.
    */
   getSubscribers(spaceId: string): ResultAsync<Subscription[], SubscriptionError>;
 
@@ -100,24 +98,36 @@ export class SubscriptionService implements ISubscriptionService {
     return res.map(() => undefined);
   }
   getSubscriptions(userId: string): ResultAsync<Subscription[], SubscriptionError> {
-    return ResultAsync.fromPromise(
-      prisma.subscription.findMany({
-        where: {
-          userId,
-        },
-      }),
-      (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
-    );
+    // ensure user exists
+    return this.userService.getById(userId)
+      .andThen((user) => {
+        return ResultAsync.fromPromise(
+          prisma.subscription.findMany({
+            where: {
+              userId,
+            },
+          }),
+          (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
+        );
+      })
+      .mapErr((err) => SubscriptionError.create("USER_OR_SPACE_NOT_FOUND", { cause: err }));
+
   }
   getSubscribers(spaceId: string): ResultAsync<Subscription[], SubscriptionError> {
-    return ResultAsync.fromPromise(
-      prisma.subscription.findMany({
-        where: {
-          spaceId,
-        },
-      }),
-      (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
-    );
+    // ensure space exists
+    return this.spaceService.countById(spaceId)
+      .andThen((count) => {
+        if (count === 0) return errAsync(SubscriptionError.create("USER_OR_SPACE_NOT_FOUND"));
+        return ResultAsync.fromPromise(
+          prisma.subscription.findMany({
+            where: {
+              spaceId,
+            },
+          }),
+          (error: unknown) => SubscriptionError.create("SERVICE_FAILURE", { cause: error }),
+        );
+      })
+      .mapErr((err) => SubscriptionError.create("USER_OR_SPACE_NOT_FOUND", { cause: err }));
   }
   getDetails(ids: string[]): ResultAsync<SubscriptionDetail[], SubscriptionError> {
     return ResultAsync.fromPromise(

@@ -196,4 +196,11 @@ export class PrismaSpaceRepository implements ISpaceRepository {
       })
     }).mapErr(toRepositoryError).map((c) => c > 0);
   }
+  countById(spaceId: string): ResultAsync<number, SpaceRepositoryError> {
+    return handleKnownRequestErrorRes([], () => {
+      return prisma.space.count({
+        where: {id : spaceId}
+      })
+    }).mapErr(toRepositoryError)
+  }
 }

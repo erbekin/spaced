@@ -64,6 +64,7 @@ export interface ISpaceService {
   checkSpace(userId: string, spaceId: string): ResultAsync<boolean, SpaceError>;
   setHomePost(dto: SpaceHomePostSetDto): ResultAsync<void, SpaceError>;
   getHomePost(spaceId: string): ResultAsync<SpaceHomePostDto | null, SpaceError>;
+  countById(spaceId: string): ResultAsync<number, SpaceError>;
 }
 
 
@@ -169,5 +170,9 @@ export class SpaceService implements ISpaceService {
         }
         return SpaceError.create('SERVICE_FAILURE', { cause: error });
       })
+  }
+  countById(spaceId: string): ResultAsync<number, SpaceError> {
+    return this.repository.countById(spaceId)
+      .mapErr((error) => SpaceError.create('SERVICE_FAILURE', { cause: error }));
   }
 }
