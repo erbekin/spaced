@@ -12,6 +12,8 @@ import { PrismaSpaceRepository } from "./space/prisma-repository";
 import createPostRouter from "./post/router";
 import { PostService } from "./post/service";
 import { PrismaPostRepository } from "./post/prisma-repository";
+import createSubscriptionsRouter from "./subscription/router";
+import { SubscriptionService } from "./subscription/service";
 export default function buildRouters(app: Application) {
   // ========== Service Instances =========
   const tokenService = new TokenService();
@@ -27,9 +29,11 @@ export default function buildRouters(app: Application) {
 
   const spaceService = new SpaceService(PrismaSpaceRepository.getInstance(), userService);
   const postService = new PostService(PrismaPostRepository.getInstance(), spaceService);
+  const subService = new SubscriptionService(spaceService, userService);
 
   // wire up user router
   app.use('/users', createUserRouter({ base: "/users", userService, tokenService, sessionService }))
   app.use('/spaces', createSpaceRouter({ spaceService, tokenService }))
   app.use('/posts', createPostRouter({ postService, tokenService }))
+  app.use('/subscriptions', createSubscriptionsRouter({ subService, userService, tokenService, spaceService }))
 }

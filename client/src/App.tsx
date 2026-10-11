@@ -17,6 +17,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PublicSpacePage from './components/PublicSpacePage';
 import EditSpaceHomePost from './components/EditSpaceHomePost';
 import Watchspace from './components/Watchspace';
+import SubscriptionsPage from './components/SubscriptionPage';
 
 function AppRoutes() {
   const { token, user, handleLogout } = useAuth();
@@ -52,6 +53,7 @@ function AppRoutes() {
             <Route path="/posts/new" element={<CreatePost />} />
             <Route path="/home/:username/edit" element={<EditHomePost />} />
             <Route path="/edit-space-home-post/:spaceSlug" element={<EditSpaceHomePost />} />
+            <Route path="/subscriptions" element={<SubscriptionsPage />} />
           </Route>
 
           // NotFound
