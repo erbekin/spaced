@@ -369,9 +369,9 @@ Maximum number of subscription IDs: 50
 
 Duplicate subscription IDs are ignored.
 
-**Response** Array.
+**Response** Object.
 ```json
-[
+{
   "count": <number of found subscriptions>,
   "found": [
     {
@@ -389,7 +389,7 @@ Duplicate subscription IDs are ignored.
     }
   ],
   "notFound": [<ids that were not found>]
-]
+}
 ```
 
 ### `POST /subscriptions/details`

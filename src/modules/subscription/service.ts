@@ -9,6 +9,7 @@ export type Subscription = {
   userId: string;
   spaceId: string;
 };
+
 export type SubscriptionDetail = {
   id: string;
   user: {
@@ -20,6 +21,11 @@ export type SubscriptionDetail = {
     id: string;
     slug: string;
     name: string;
+    owner: {
+      id: string;
+      username: string;
+      name: string | null;
+    };
   };
 };
 
@@ -151,6 +157,13 @@ export class SubscriptionService implements ISubscriptionService {
               id: true,
               slug: true,
               name: true,
+              owner: {
+                select: {
+                  id: true,
+                  username: true,
+                  name: true,
+                }
+              },
             }
           },
         }

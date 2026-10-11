@@ -92,3 +92,22 @@ export type SpaceEntityEx = SpaceEntity & {
     };
     spaceHomePost: HomePostDto['homePost'];
 }
+
+export type SubscriptionDetail = {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+    name: string | null;
+  };
+  space: {
+    id: string;
+    slug: string;
+    name: string;
+    owner: {
+      id: string;
+      username: string;
+      name: string | null;
+    };
+  };
+};
